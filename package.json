@@ -1,0 +1,33 @@
+{
+  "name": "vismaad",
+  "version": "1.0.0",
+  "description": "Kirtan",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app"
+  },
+  "dependencies": {
+    "async": "^2.6.0",
+    "aws-sdk": "^2.186.0",
+    "bcryptjs": "*",
+    "body-parser": "*",
+    "cors": "*",
+    "express": "*",
+    "jsonwebtoken": "*",
+    "mongoose": "*",
+    "passport": "*",
+    "passport-jwt": "*",
+    "request": "^2.83.0",
+    "sqlite3": "^3.1.13",
+    "trimp3": "^0.1.2",
+    "typescript": "^2.2.2",
+    "underscore": "^1.8.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ivesingh93/vismaad"
+  },
+  "author": "Ivkaran Singh",
+  "license": "ISC"
+}

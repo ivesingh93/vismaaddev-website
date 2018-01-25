@@ -1,0 +1,5 @@
+@font-face { font-family: GurbaniLipi; src: url('../../../../assets/fonts/Gurblipi.ttf'); }
+.gurmukhi {
+  color: red;
+  font-family: GurbaniLipi
+}

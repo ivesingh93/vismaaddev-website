@@ -1,0 +1,34 @@
+<div class="container-fluid" >
+  <h1>Recording List</h1>
+
+  <mat-tab-group style="height: 1000px;">
+    <mat-tab label="Raagis" >
+      <tree-root [nodes]="raagisRecordingsShabads" *ngIf="raagisRecordingsShabads.length" #treeComponent></tree-root>
+    </mat-tab>
+
+    <mat-tab label="Recent Recordings">
+      <tree-root [nodes]="raagisRecordings" *ngIf="raagisRecordings.length" #treeComponent></tree-root>
+    </mat-tab>
+
+    <mat-tab label="Shabads" layout-fill>
+      <br>
+      <label>Shabad Title</label>
+      <br>
+      <ng-select
+        *ngIf="shabadList.length"
+        (selected)="onShabadTitleSelected($event.text)"
+        [items]="shabadList">
+      </ng-select>
+      <br>
+      <div *ngIf="panktiList.length > 0; else spaces">
+        <div *ngFor="let pankti of panktiList">
+          <span style='font-family: GurbaniLipi; font-size: 19px'>{{pankti}}</span>
+        </div>
+      </div>
+      <ng-template #spaces><br><br><br><br><br><br><br><br><br><br><br></ng-template>
+    </mat-tab>
+
+  </mat-tab-group>
+
+</div>
+

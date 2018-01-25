@@ -1,0 +1,209 @@
+<div class="container-fluid">
+  <h1>Recording Form</h1>
+
+
+  <form [formGroup]="recordingForm" (ngSubmit)="onSubmit()">
+
+    <!-- Raagi -->
+    <div class="form-group">
+
+      <div class="row">
+
+        <!-- Raagi Name -->
+        <div class="col-md-6">
+          <label for="raagiName">Raagi Name</label>
+          <br>
+          <ng-select
+            id="raagiName"
+            *ngIf="raagiNamesList.length > 0"
+            formControlName="raagiName"
+            placeholder="Select Raagi Name"
+            (selected)="onRaagiSelected($event)"
+            [items]="raagiNamesList">
+          </ng-select>
+        </div>
+
+        <!-- New Raagi Name -->
+        <div class="col-md-6">
+          <div class="form-group" *ngIf="selectedRaagi === 'Add New Raagi'">
+            <label for="newRaagiName">New Raagi Name</label>
+            <input type="text" class="form-control" id="newRaagiName" formControlName="newRaagiName">
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="form-group" *ngIf="selectedRaagi !== 'Add New Raagi' && selectedRaagi !== ''">
+      <mat-checkbox (change)="onEditRecording($event.checked)">Edit a Recording</mat-checkbox>
+    </div>
+
+    <!--Recording Title-->
+    <div class="form-group" *ngIf="editRecording && selectedRaagi !== 'Add New Raagi'">
+      <label for="recordingTitle">Recording Title</label>
+      <br>
+      <ng-select
+        id="recordingTitle"
+        *ngIf="recordingTitleList.length > 0"
+        formControlName="recordingTitle"
+        placeholder="Select Recording Title"
+        (selected)="onRecordingTitleSelected($event)"
+        [items]="recordingTitleList">
+      </ng-select>
+    </div>
+
+    <!-- Recording URL -->
+    <div class="form-group" *ngIf="!editRecording">
+      <label for="recordingURL">Recording URL</label>
+      <br>
+      <input type="text" class="form-control" id="recordingURL" formControlName="recordingURL"
+             (change)="onRecordingURLChange($event.target.value)">
+      <div class="alert alert-danger" *ngIf="recordingURLAlert.length > 0">{{recordingURLAlert}}</div>
+    </div>
+
+    <!-- Shabads -->
+    <div class="form-group">
+      <label>Add Shabads</label>
+      <br>
+
+      <div formArrayName="shabads">
+        <!--Shabad i FORM-->
+        <div *ngFor="let shabad of recordingForm.controls.shabads.controls; let i = index" class="panel panel-success">
+
+          <!-- Remove Shabad Button -->
+          <div class="panel-heading" >
+            <span >Shabad {{i+1}}</span>
+            <span class="glyphicon glyphicon-remove pull-right"
+                  style="color:seagreen"
+                  *ngIf="recordingForm.controls.shabads.controls.length > 1"
+                  (click)="onRemoveShabad(i)">
+            </span>
+          </div>
+
+          <div class="panel-body" [formGroupName]="i">
+
+            <!--Shabad Title and New Shabad Title-->
+            <div class="row">
+
+              <!-- Shabad Title-->
+              <div class="col-md-6">
+                <label>Shabad Title</label>
+                <br>
+                <ng-select
+                  *ngIf="shabadsList.length > 0"
+                  placeholder="Select Shabad Title"
+                  formControlName="shabadTitle"
+                  (selected)="onShabadSelected($event, i)"
+                  [items]="shabadsList">
+                </ng-select>
+                <br>
+              </div>
+
+              <!--New Shabad Title-->
+              <div class="col-md-6">
+                <div class="form-group" *ngIf="selectedShabads[i] === 'Add New Shabad'">
+                  <label for="newShabadTitle">New Shabad Title</label>
+                  <br>
+                  <input type="text" class="form-control" formControlName="newShabadTitle" id="newShabadTitle">
+                </div>
+              </div>
+
+            </div>
+
+            <!--Shabad Start Time, Shabad End Time-->
+            <div class="row">
+
+              <!--Shabad Start Time-->
+              <div class="col-md-3">
+                <label>Enter Shabad Starting Time</label>
+                <input type="text" class="form-control" style="width: 150px;" formControlName="shabadStartingTime" id="shabadStartingTime">
+                <br>
+              </div>
+
+              <!--Shabad End Time-->
+              <div class="col-md-3">
+                <label>Enter Shabad Ending Time</label>
+                <br>
+                <input type="text" class="form-control" style="width: 150px;" formControlName="shabadEndingTime" id="shabadEndingTime">
+              </div>
+
+              <!--Enter Initials-->
+              <div class="col-md-6" *ngIf="selectedShabads[i] === 'Add New Shabad'">
+
+                <div class="form-inline">
+                  <label for="initials">Enter Initials:</label>&nbsp;&nbsp;
+                  <br>
+                  <div class="input-group">
+                    <input type="text" class="form-control" style="width: 150px;" formControlName="initials" id="initials">
+
+                    <span class="input-group-btn">
+                      <button type="button" class="btn btn-info" (click)="getLines(i)">
+                        <span class="glyphicon glyphicon-search"></span> Search
+                      </button>
+                    </span>
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+            <!--Select Shabad Sathaayi-->
+            <div *ngIf="sathaayiLines.length > 0 && selectedShabads[i] === 'Add New Shabad'">
+              <label>Select Shabad Sathaayi</label>
+              <br>
+              <ng-select
+                placeholder="Select Shabad Sathaayi"
+                formControlName="sathaayiId"
+                (selected)="onLineSelected($event, i)"
+                [items]="sathaayiLines">
+              </ng-select>
+            </div>
+
+            <!--Select Starting Pankti-->
+            <div *ngIf="startingLines.length > 0 && selectedShabads[i] === 'Add New Shabad'">
+              <br>
+              <label>Select Starting Pankti</label>
+              <br>
+              <ng-select
+                placeholder="Select Starting Pankti"
+                formControlName="startingId"
+                (selected)="onStartingPanktiSelected($event, i)"
+                [items]="startingLines">
+              </ng-select>
+            </div>
+
+            <!--Select Ending Pankti-->
+            <div *ngIf="endingLines.length > 0 && selectedShabads[i] === 'Add New Shabad'">
+              <br>
+              <label>Select Ending Pankti</label>
+              <br>
+              <ng-select
+                placeholder="Select Ending Pankti"
+                formControlName="endingId"
+                [items]="endingLines">
+              </ng-select>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!--Add New Shabad-->
+        <button (click)="onAddNewShabad()" type="button" class="btn btn-success btn-md">
+          <span class="glyphicon glyphicon-plus"></span> Add New Shabad
+        </button>
+
+      </div>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Submit</button>
+
+    <br><br><br>
+
+  </form>
+</div>
+
