@@ -1,0 +1,11 @@
+cp -r assets /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
+cp -r config /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
+cp -r models /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
+cp -r node_modules /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
+cp -r routes /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
+cp -r public /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
+cp app.js /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
+cp package.json /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
+
+mongoexport -h ds211558.mlab.com:11558 -d vismaaddev -c raagis -u ivesingh -p 9april1993 -o raagis.json
+mongoexport -h ds211558.mlab.com:11558 -d vismaaddev -c shabads -u ivesingh -p 9april1993 -o shabads.json

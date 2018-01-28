@@ -21,12 +21,7 @@ export class UploadShabadsComponent implements OnInit {
   selected_recording_title = "";
   selected_recording_url = "";
   selected_shabad_obj = "";
-  selected_shabad_length = "";
-  selected_shabad_sathaayi_id = 0;
-  selected_shabad_starting_id = 0;
-  selected_shabad_ending_id = 0;
-  selected_shabad_starting_time = "";
-  selected_shabad_ending_time = "";
+  selected_shabad_english_title = "";
 
   delete_recording = false;
 
@@ -84,13 +79,7 @@ export class UploadShabadsComponent implements OnInit {
       }
     }
 
-    this.selected_shabad_length = this.selected_shabad_obj['shabad_length'];
-    this.selected_shabad_starting_time = this.selected_shabad_obj['shabad_starting_time'];
-    this.selected_shabad_ending_time = this.selected_shabad_obj['shabad_ending_time'];
-    this.selected_shabad_sathaayi_id = this.selected_shabad_obj['sathaayi_id'];
-    this.selected_shabad_starting_id = this.selected_shabad_obj['starting_id'];
-    this.selected_shabad_ending_id = this.selected_shabad_obj['ending_id'];
-
+    this.selected_shabad_english_title = this.selected_shabad_obj['shabad_english_title'];
 
     let componentThis = this;
     this.restService.getRangeLines(this.selected_shabad_obj['starting_id'], this.selected_shabad_obj['ending_id'])
@@ -102,15 +91,17 @@ export class UploadShabadsComponent implements OnInit {
       .catch(error => console.log(error));
   }
 
+  changeShabadTitle(){
+
+    this.restService.changeShabadTitle(this.selected_shabad_obj['sathaayi_id'], this.selected_shabad_english_title)
+      .then(data => this.toastrService.success('', data.toString(), this.config))
+      .catch(error => console.log(error));
+  }
+
   uploadShabadToAWS(){
-    let shabadObj = {
-      shabad_english_title: this.selected_shabad_obj['shabad_english_title'],
-      shabad_starting_time: this.selected_shabad_obj['shabad_starting_time'],
-      shabad_ending_time: this.selected_shabad_obj['shabad_ending_time']
-    };
 
     this.toastrService.warning('', "Please wait while shabad is being uploaded...", this.config);
-    this.restService.uploadShabad(shabadObj, this.selected_raagi, this.selected_recording_title, this.delete_recording)
+    this.restService.uploadShabad(this.selected_shabad_obj, this.selected_raagi, this.selected_recording_title, this.delete_recording)
       .then(data =>  this.toastrService.success('', data.toString(), this.config))
       .catch(error =>  this.toastrService.error('', 'Shabad uploading failed!', this.config));
   }

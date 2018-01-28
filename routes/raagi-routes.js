@@ -284,6 +284,7 @@ router.get('/raagis/:raagi_name/recordings/:recording_title/shabads', (req, res)
                            "sathaayi_id": shabad.sathaayi_id,
                            "starting_id": foundShabad.starting_id,
                            "ending_id": foundShabad.ending_id,
+                           "shabad_checked": foundShabad.shabad_checked,
                            "shabad_starting_time": shabad.shabad_starting_time,
                            "shabad_ending_time": shabad.shabad_ending_time,
                            "shabad_length": diff(shabad.shabad_starting_time, shabad.shabad_ending_time),
@@ -376,17 +377,24 @@ router.post('/uploadShabad', (req, res) => {
     let shabad_english_title = req.body.shabad.shabad_english_title;
     let shabad_starting_time = req.body.shabad.shabad_starting_time;
     let shabad_ending_time = req.body.shabad.shabad_ending_time;
+    let shabad_sathaayi_id = req.body.shabad.sathaayi_id;
+    let starting_id = req.body.shabad.starting_id;
+    let ending_id = req.body.shabad.ending_id;
     let raagi_name = req.body.raagi_name;
     let recording_title = req.body.recording_title;
     let delete_recording = req.body.delete_recording;
 
     let command = "ffmpeg -y -i " + recording_title.replace(/ /g, "\\ ") + ".mp3 -ss "
         + shabad_starting_time + " -to " + shabad_ending_time
-        + " -acoder copy " + shabad_english_title.replace(/ /g, "\\ ") + ".mp3";
+        + " -acodec copy " + shabad_english_title.replace(/ /g, "\\ ") + ".mp3";
 
     let log = child_process.execSync(command, { stdio: ['pipe', 'pipe', 'ignore']});
 
-    upload_shabad(shabad_english_title, raagi_name, recording_title, delete_recording, res)
+    Shabad.update({"starting_id": starting_id, "ending_id": ending_id}, {$set: {"shabad_checked": true}}, function(err, numAffected){
+
+        upload_shabad(shabad_english_title, raagi_name, recording_title, delete_recording, res)
+    });
+
 
 });
 
@@ -423,6 +431,17 @@ router.put('/addRecording', (req, res) => {
                 });
             }
         }
+    });
+});
+
+router.put('/changeShabadTitle', (req, res) => {
+    let sathaayi_id = req.body.sathaayi_id;
+    let shabad_english_title = req.body.shabad_english_title;
+
+    Shabad.update({"sathaayi_id": sathaayi_id}, {$set: {"shabad_english_title": shabad_english_title}}, function(err, numAffected){
+       if(err) throw err;
+
+       res.json("Shabad Title Changed");
     });
 });
 

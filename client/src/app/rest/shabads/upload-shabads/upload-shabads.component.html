@@ -6,22 +6,23 @@
 
     <div class="row">
 
-      <!--Raagi Name, Recordings, Shabads Dropdown-->
+      <!--Raagi Name, Recordings, Shabads Dropdown, Change Shabad Title-->
       <div class="col-md-4">
+
+        <!--Select Raagi Name-->
         <div>
           <label for="raagiName">Raagi Name</label>
           <br>
-          <ng-select
-            id="raagiName"
-            *ngIf="raagi_names.length > 0"
-            placeholder="Select Raagi Name"
-            (selected)="onRaagiSelected($event)"
-            [items]="raagi_names">
+          <ng-select id="raagiName"
+                     *ngIf="raagi_names.length > 0"
+                     placeholder="Select Raagi Name"
+                     (selected)="onRaagiSelected($event)"
+                     [items]="raagi_names">
           </ng-select>
+          <br>
         </div>
 
-        <br>
-
+        <!--Recordings, Open Recording, Upload Recording to AWS, Delete Recording-->
         <div *ngIf="selected_raagi">
           <label for="recordings">Recordings</label>
           <br>
@@ -35,18 +36,15 @@
           <br>
           <div *ngIf="selected_recording_title">
             <a href="{{selected_recording_url}}" target="_blank">Open Recording</a>
-            <br><br>
             <button class="btn btn-primary btn-md" type="submit" (click)="uploadRecordingToAWS()">
               Upload Recording to AWS
             </button>
-            &nbsp;&nbsp;
             <mat-checkbox (change)="deleteRecording($event.checked)">Delete Recording</mat-checkbox>
           </div>
-
+          <br>
         </div>
 
-        <br>
-
+        <!--Shabads, Shabad Title Change Option, Upload Shabad to AWS-->
         <div *ngIf="selected_recording_title">
           <label for="shabads">Shabads</label>
           <br>
@@ -57,39 +55,42 @@
             (selected)="onShabadSelected($event)"
             [items]="shabad_english_titles">
           </ng-select>
+
+          <br>
+
+          <label for="shabadTitle">Shabad Title: </label>&nbsp;&nbsp;
+          <input type="text" id="shabadTitle" style="width:250px;" [(ngModel)]="selected_shabad_english_title">&nbsp;&nbsp;
+          <button class="btn btn-primary btn-md" type="button" (click)="changeShabadTitle()">Change Shabad Title</button>&nbsp;
+          <button class="btn btn-primary btn-md" type="submit" *ngIf="selected_shabad_obj" (click)="uploadShabadToAWS()">Upload Shabad to AWS</button>
         </div>
 
         <br>
 
       </div>
 
-      <!--Shabad Pankti-->
-      <div class="col-md-4">
-        <div *ngIf="shabad_panktis.length > 0">
+      <!--Shabad Pankti & Info-->
+      <div class="col-md-8" *ngIf="shabad_panktis.length > 0">
+
+        <div class="col-md-5 text-center">
           <div *ngFor="let pankti of shabad_panktis">
-            <span style='font-family: GurbaniLipi; font-size: 25px; text-align: center;'>{{pankti}}</span>
+            <span style='font-family: GurbaniLipi; font-size: 23px; text-align: center;'>{{pankti}}</span>
+          </div>
+          <br><br><br>
+          <div *ngIf="selected_shabad_obj['shabad_checked']">
+            <span style="font-size:5.5em;" class="glyphicon glyphicon-ok"></span>
+          </div>
+          <div *ngIf="!selected_shabad_obj['shabad_checked']">
+            <span style="font-size:5.5em;" class="glyphicon glyphicon-remove"></span>
           </div>
         </div>
-      </div>
 
-      <!--Shabad Options-->
-      <div class="col-md-4">
-
-        <div *ngIf="shabad_panktis.length > 0">
-          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Length: {{selected_shabad_length}}</span><br>
-          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Starting Time: {{selected_shabad_starting_time}}</span><br>
-          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Ending Time: {{selected_shabad_ending_time}}</span><br>
-          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Sathaayi ID: {{selected_shabad_sathaayi_id}}</span><br>
-          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Starting ID: {{selected_shabad_starting_id}}</span><br>
-          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Ending ID: {{selected_shabad_ending_id}}</span><br>
-        </div>
-
-        <br><br>
-
-        <div>
-          <button class="btn btn-primary btn-md" type="submit" *ngIf="selected_shabad_obj" (click)="uploadShabadToAWS()">
-            Upload Shabad to AWS
-          </button>
+        <div class="col-md-3">
+          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Length: {{selected_shabad_obj['shabad_length']}}</span><br>
+          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Starting Time: {{selected_shabad_obj['shabad_starting_time']}}</span><br>
+          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Ending Time: {{selected_shabad_obj['shabad_ending_time']}}</span><br>
+          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Sathaayi ID: {{selected_shabad_obj['sathaayi_id']}}</span><br>
+          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Starting ID: {{selected_shabad_obj['starting_id']}}</span><br>
+          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Ending ID: {{selected_shabad_obj['ending_id']}}</span><br>
         </div>
 
       </div>
