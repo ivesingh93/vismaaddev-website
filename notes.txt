@@ -1,3 +1,9 @@
+
+COMMANDS:
+---------
+
+1. Copy Files:
+
 cp -r assets /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
 cp -r config /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
 cp -r models /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
@@ -7,5 +13,22 @@ cp -r public /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
 cp app.js /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
 cp package.json /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
 
-mongoexport -h ds211558.mlab.com:11558 -d vismaaddev -c raagis -u ivesingh -p 9april1993 -o raagis.json
-mongoexport -h ds211558.mlab.com:11558 -d vismaaddev -c shabads -u ivesingh -p 9april1993 -o shabads.json
+2. Mongo Export:
+
+mongoexport -h ds143132.mlab.com:43132 -d vismaadprod -c raagis -u ivesingh -p 9april1993 -o raagis.json
+mongoexport -h ds143132.mlab.com:43132 -d vismaadprod -c shabads -u ivesingh -p 9april1993 -o shabads.json
+
+DEPLOY NOTES:
+------------
+
+1. Go to client/src/app/rest/shared/rest.service.ts
+    --> Set the LOCALHOST variable to blank
+2. Go back to the client folder
+    --> Run "ng build". This will create public folder
+3. Open app.js file and comment out every line that refers to the public folder
+4. Make sure the port # in app.js file is 8080
+5. Copy all the files using the commands above
+6. Go to the vismaadprod directory and run the following commands:
+    --> git add .
+    --> git commit -m "<message>"
+    --> git push heroku master

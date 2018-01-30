@@ -101,6 +101,7 @@ export class UploadShabadsComponent implements OnInit {
   uploadShabadToAWS(){
 
     this.toastrService.warning('', "Please wait while shabad is being uploaded...", this.config);
+    this.selected_shabad_obj['shabad_english_title'] = this.selected_shabad_english_title;
     this.restService.uploadShabad(this.selected_shabad_obj, this.selected_raagi, this.selected_recording_title, this.delete_recording)
       .then(data =>  this.toastrService.success('', data.toString(), this.config))
       .catch(error =>  this.toastrService.error('', 'Shabad uploading failed!', this.config));
