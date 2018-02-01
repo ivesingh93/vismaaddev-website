@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {RestService} from "../../shared/rest.service";
 import { ToastrService, ToastConfig } from 'ngx-toastr';
 
@@ -32,6 +32,9 @@ export class UploadShabadsComponent implements OnInit {
     extendedTimeOut: 20000,
     closeButton: true
   };
+
+  @ViewChild('shabadPlayer') audioPlayerRef: ElementRef;
+  jumpToTime = "";
 
   constructor(private restService: RestService,
               private toastrService: ToastrService) { }
@@ -105,6 +108,20 @@ export class UploadShabadsComponent implements OnInit {
     this.restService.uploadShabad(this.selected_shabad_obj, this.selected_raagi, this.selected_recording_title, this.delete_recording)
       .then(data =>  this.toastrService.success('', data.toString(), this.config))
       .catch(error =>  this.toastrService.error('', 'Shabad uploading failed!', this.config));
+  }
+
+  rewind(){
+    this.audioPlayerRef.nativeElement['currentTime'] -= 5;
+  }
+
+  forward(){
+    this.audioPlayerRef.nativeElement['currentTime'] += 5;
+  }
+
+  jumpTo(){
+    let time = this.jumpToTime.match(/(.{1,2})/g);
+    let sec = (parseInt(time[0]) * 60) + parseInt(time[1]);
+    this.audioPlayerRef.nativeElement['currentTime'] = sec;
   }
 
   private extractRecordingsObj(data){

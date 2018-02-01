@@ -23,6 +23,7 @@ export class RestService{
   private UPLOAD_RECORDING = this.LOCALHOST + "/api/raagiRoutes/uploadRecording";
   private UPLOAD_SHABAD = this.LOCALHOST + "/api/raagiRoutes/uploadShabad";
   private CHANGE_SHABAD_TITLE = this.LOCALHOST + "/api/raagiRoutes/changeShabadTitle";
+  private GET_SHABAD_BY_SATHAAYI_ID = this.LOCALHOST + "/api/raagiRoutes/shabads/"
 
   constructor(private http: Http){}
 
@@ -81,6 +82,13 @@ export class RestService{
       .then(this.extractData)
       .catch(this.handleError);
 
+  }
+
+  getShabadBySathaayiID(sathaayiID): Promise<any>{
+    return this.http.get(this.GET_SHABAD_BY_SATHAAYI_ID + sathaayiID)
+      .toPromise()
+      .then(this.extractData)
+      .catch(this.handleError);
   }
 
   getRecordingsByRaagi(raagiName: string): Promise<any>{

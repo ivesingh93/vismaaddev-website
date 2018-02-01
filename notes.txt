@@ -15,8 +15,27 @@ cp package.json /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
 
 2. Mongo Export:
 
+VISMAAD DEV:
+
+mongoexport -h ds211558.mlab.com:11558 -d vismaaddev -c raagis -u ivesingh -p 9april1993 -o raagis.json
+mongoexport -h ds211558.mlab.com:11558 -d vismaaddev -c shabads -u ivesingh -p 9april1993 -o shabads.json
+
+VISMAAD PROD:
+
 mongoexport -h ds143132.mlab.com:43132 -d vismaadprod -c raagis -u ivesingh -p 9april1993 -o raagis.json
 mongoexport -h ds143132.mlab.com:43132 -d vismaadprod -c shabads -u ivesingh -p 9april1993 -o shabads.json
+
+3. Mongo Import:
+
+VISMAAD DEV:
+
+
+
+VISMAAD PROD:
+
+mongoimport -h ds143132.mlab.com:43132 -d vismaadprod -c raagis -u ivesingh -p 9april1993 --file raagis.json
+mongoimport -h ds143132.mlab.com:43132 -d vismaadprod -c shabads -u ivesingh -p 9april1993 --file shabads.json
+
 
 DEPLOY NOTES:
 ------------

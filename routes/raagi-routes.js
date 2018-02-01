@@ -185,6 +185,20 @@ router.get('/shabads', (req, res) => {
     });
 });
 
+router.get('/shabads/:sathaayi_id', (req, res) => {
+   let sathaayi_id = parseInt(req.params.sathaayi_id);
+
+   Shabad.findOne({"sathaayi_id": sathaayi_id}, function(err, foundShabad){
+      if(err) throw err;
+
+      if(foundShabad !== null){
+          res.json(foundShabad);
+      }else{
+          res.json("Shabad not found");
+      }
+   });
+});
+
 router.get('/raagis/:raagi_name/recordings', (req, res) =>{
     Raagi.findOne({'raagi_name': req.params.raagi_name}, function(err, recordingsObj) {
         if(err){
@@ -315,7 +329,6 @@ router.post('/addRaagi', (req, res) =>{
                     "shabads": []
                 };
 
-                addShabads(req.body.recordings[0].shabads);
                 async.each(req.body.recordings[0].shabads, function(shabad, shabadCallback){
 
                     let shabadObj = {

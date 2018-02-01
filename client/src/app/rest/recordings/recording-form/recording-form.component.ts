@@ -221,10 +221,11 @@ export class RecordingFormComponent implements OnInit {
   // When sathayi is selected, process starting lines array.
   onLineSelected(value: any, index){
     let componentThis = this;
+    let sathaayi_id = value.id;
     let selected = {
-      id: value.id,
-      from: value.id - 20,
-      to: value.id + 20,
+      id: sathaayi_id,
+      from: sathaayi_id - 20,
+      to: sathaayi_id + 20,
       gurmukhi: value.text
     };
 
@@ -237,23 +238,38 @@ export class RecordingFormComponent implements OnInit {
       }
     }
 
-    // If the selected line or sathayi has Kirtan ID, then grab just those lines.
-    if(kirtan_id !== null){
-      this.restService.getShabadLines(kirtan_id)
-        .then(function(data){
-          componentThis.processStartingLines(selected, data);
+    // If shabad by this sathaayi_id already exists then no need to enter the New Shabad Title or select starting/ending pankti.
+    this.restService.getShabadBySathaayiID(sathaayi_id)
+      .then(function(data){
 
-        })
-        .catch(error => console.log(error));
-    }else{
-      // Otherwise, grab the lines within the range.
+        if(data === "Shabad not found"){
+          //If the selected line or sathayi has Kirtan ID, then grab just those lines.
+          if(kirtan_id !== null){
+            componentThis.restService.getShabadLines(kirtan_id)
+              .then(function(data){
+                componentThis.processStartingLines(selected, data);
 
-      this.restService.getRangeLines(selected.from, selected.to)
-        .then(function(data){
-          componentThis.processStartingLines(selected, data);
-        })
-        .catch(error => console.log(error));
-    }
+              })
+              .catch(error => console.log(error));
+          }else{
+            // Otherwise, grab the lines within the range.
+
+            componentThis.restService.getRangeLines(selected.from, selected.to)
+              .then(function(data){
+                componentThis.processStartingLines(selected, data);
+              })
+              .catch(error => console.log(error));
+          }
+        }else{
+          let shabadObj = data;
+          componentThis.startingLines = [];
+          componentThis.endingLines = [];
+          componentThis.toastrService.warning('', shabadObj.shabad_english_title + " shabad found! Please select the shabad from Shabad Title.", componentThis.config);
+        }
+      })
+      .catch(error => console.log(error));
+
+
   }
 
   // When starting line is selected, process ending lines.
@@ -451,6 +467,7 @@ export class RecordingFormComponent implements OnInit {
       };
       this.startingLines.push(obj);
     }
+    console.log()
   }
 
   // Get final raagi name, whether it's from the existing list or a new one.
