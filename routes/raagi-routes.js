@@ -90,12 +90,11 @@ router.get('/raagi_info', (req, res) => {
             for(let raagi of raagis){
                 let raagis_info = {
                     raagi_id: 0,
-                    raagi_name: "",
+                    raagi_name: raagi.raagi_name,
                     shabads_count: 0,
-                    raagi_image_url: "null",
+                    raagi_image_url: raagi.raagi_image_url,
                     minutes_of_shabads: 0
                 };
-                raagis_info.raagi_name = raagi.raagi_name;
                 let recordingsArr = raagi.recordings;
                 let totalShabadMinutes = 0;
                 for(let i = 0; i < recordingsArr.length; i++){
@@ -185,6 +184,16 @@ router.get('/shabads', (req, res) => {
     });
 });
 
+router.get('/shabadsWithNoThemes', (req, res) => {
+   Shabad.find({"shabad_theme": "none"}, function(err, shabads){
+       if(err){
+           res.json(err);
+       }else{
+           res.json(shabads.sort(compareByShabadName));
+       }
+   });
+});
+
 router.get('/shabads/:sathaayi_id', (req, res) => {
    let sathaayi_id = parseInt(req.params.sathaayi_id);
 
@@ -258,7 +267,9 @@ router.get('/raagis/:raagi_name/shabads', (req, res) =>{
                                     "ending_id": foundShabad.ending_id,
                                     "raagi_name": req.params.raagi_name,
                                     "shabad_length": diff(shabad.shabad_starting_time, shabad.shabad_ending_time),
-                                    "shabad_url": "http://www.gurmatsagar.com/files/Bhai%20Maninderpal%20Singh%20Jee%20Keertan%20Duty%2031-03-17.mp3"
+                                    "shabad_url": "https://s3.amazonaws.com/vismaadbani/vismaaddev/Raagis/" +
+                                    req.params.raagi_name + "/" + foundShabad.shabad_english_title + ".mp3"
+
                                 });
                             }
 
@@ -314,6 +325,37 @@ router.get('/raagis/:raagi_name/recordings/:recording_title/shabads', (req, res)
 
 });
 
+router.get('/shabads/:sathaayi_id/raagis', (req, res) => {
+    let sathaayi_id = req.params.sathaayi_id;
+    let raagis_arr = [];
+
+
+    Raagi.find({"recordings.shabads": {"$elemMatch": {"sathaayi_id": sathaayi_id}}}, {raagi_name: 1, _id: 0}, function(err, raagis){
+        let raagis_arr = [];
+        for(let raagi of raagis){
+            raagis_arr.push(raagi.raagi_name);
+        }
+        res.json(raagis_arr);
+      // for(let raagi of raagis){
+      //     for(let recording of raagi.recordings){
+      //         for(let shabad of recording.shabads){
+      //             console.log(shabad.sathaayi_id + " " + sathaayi_id);
+      //             if(shabad.sathaayi_id == sathaayi_id){
+      //
+      //                 let obj = {
+      //                     raagi_name: raagi.raagi_name,
+      //                     recording_title: recording.recording_title
+      //                 };
+      //                 raagis_arr.push(obj);
+      //                 break;
+      //             }
+      //         }
+      //     }
+      // }
+
+    });
+});
+
 router.post('/addRaagi', (req, res) =>{
     let raagi = new Raagi();
 
@@ -323,6 +365,7 @@ router.post('/addRaagi', (req, res) =>{
         }else{
             if(foundRaagi === 0){
                 raagi.raagi_name = req.body.raagi_name;
+                raagi.raagi_image_url = "https://s3.amazonaws.com/vismaadbani/vismaaddev/Raagis Photos/" + raagi.raagi_name + ".jpg";
                 let recordingObj = {
                     "recording_title": req.body.recordings[0].recording_title,
                     "recording_url": req.body.recordings[0].recording_url,
@@ -395,17 +438,27 @@ router.post('/uploadShabad', (req, res) => {
     let ending_id = req.body.shabad.ending_id;
     let raagi_name = req.body.raagi_name;
     let recording_title = req.body.recording_title;
-    let delete_recording = req.body.delete_recording;
+    let replaced_recording_title = req.body.recording_title.replace(/ /g, "\\ ").replace("(", "\\(").replace(")", "\\)");
 
-    let command = "ffmpeg -y -i " + recording_title.replace(/ /g, "\\ ") + ".mp3 -ss "
+    let shabad_starting_time_arr = shabad_starting_time.split(":");
+    let shabad_ending_time_arr = shabad_ending_time.split(":");
+
+    if((parseInt(shabad_starting_time_arr[0]) >= 60) && (parseInt(shabad_ending_time_arr[0]) >= 60)){
+        shabad_starting_time = "01:" + ('0' + (parseInt(shabad_starting_time_arr[0] - 60))).slice(-2) + ":" + shabad_starting_time_arr[1];
+    }
+    if((parseInt(shabad_ending_time_arr[0]) >= 60)){
+        shabad_ending_time = "01:" + ('0' + (parseInt(shabad_ending_time_arr[0] - 60))).slice(-2) + ":" + shabad_ending_time_arr[1];
+    }
+
+    let command = "ffmpeg -y -i " + replaced_recording_title + ".mp3 -ss "
         + shabad_starting_time + " -to " + shabad_ending_time
         + " -acodec copy " + shabad_english_title.replace(/ /g, "\\ ") + ".mp3";
 
     let log = child_process.execSync(command, { stdio: ['pipe', 'pipe', 'ignore']});
 
-    Shabad.update({"starting_id": starting_id, "ending_id": ending_id}, {$set: {"shabad_checked": true}}, function(err, numAffected){
-
-        upload_shabad(shabad_english_title, raagi_name, recording_title, delete_recording, res)
+    Shabad.update({"starting_id": starting_id, "ending_id": ending_id}, {$set: {"shabad_checked": true}}, {multi: true}, function(err, numAffected){
+        console.log(numAffected);
+        upload_shabad(shabad_english_title, raagi_name, recording_title, res)
     });
 
 
@@ -452,9 +505,31 @@ router.put('/changeShabadTitle', (req, res) => {
     let shabad_english_title = req.body.shabad_english_title;
 
     Shabad.update({"sathaayi_id": sathaayi_id}, {$set: {"shabad_english_title": shabad_english_title}}, function(err, numAffected){
-       if(err) throw err;
+        if(err) throw err;
 
-       res.json("Shabad Title Changed");
+        res.json("Shabad Title Changed");
+    });
+});
+
+router.put('/changeStartingID', (req, res) => {
+    let original_starting_id = req.body.original_starting_id;
+    let new_starting_id = req.body.new_starting_id;
+
+    Shabad.update({"starting_id": original_starting_id}, {$set: {"starting_id": new_starting_id}}, {multi: true}, function(err, numAffected){
+        if(err) throw err;
+        console.log(numAffected);
+        res.json("Starting ID Changed");
+    });
+});
+
+router.put('/changeEndingID', (req, res) => {
+    let original_ending_id = req.body.original_ending_id;
+    let new_ending_id = req.body.new_ending_id;
+
+    Shabad.update({"ending_id": original_ending_id}, {$set: {"ending_id": new_ending_id}}, {multi: true}, function(err, numAffected){
+        if(err) throw err;
+        console.log(numAffected);
+        res.json("Ending ID Changed");
     });
 });
 
@@ -480,6 +555,19 @@ router.put('/raagis/:raagi_name/recordings/:recording_title/addShabads', (req, r
                     res.json(numAffected);
                 }
             });
+    });
+});
+
+router.put('/addShabadThemes/:shabad_english_title', (req, res) => {
+    let shabad_english_title = req.params.shabad_english_title;
+    let themes = req.body.themes;
+
+    Shabad.update({"shabad_english_title": shabad_english_title}, {$set: {"shabad_theme": themes}}, function(error, numAffected){
+       if(error){
+           throw error;
+       } else{
+           res.json("Successfull");
+       }
     });
 });
 
@@ -509,28 +597,22 @@ function add_shabad(shabad, shabadCallback){
     });
 }
 
-function upload_shabad(shabad_english_title, raagi_name, recording_title, delete_recording, res){
+function upload_shabad(shabad_english_title, raagi_name, recording_title, res){
     let s3 = new AWS.S3();
     fs.readFile(shabad_english_title + ".mp3", function(err, data){
        if(err){
            console.log(err);
        } else{
            let params = {
-               Bucket: "vismaadbani/vismaaddev/Raagis/" + raagi_name + "/" + recording_title,
+               Bucket: "vismaadbani/vismaaddev/Raagis/" + raagi_name,
                Key: shabad_english_title + ".mp3",
                Body: data,
                ACL:'public-read',
                ContentType: "audio/mpeg"
            };
            s3.putObject(params, function(err, data){
-               if(delete_recording === true){
-                   fs.unlink(shabad_english_title + ".mp3");
-                   fs.unlink(recording_title + ".mp3");
-                   res.json("Shabad uploaded and recording has been deleted!")
-               }else{
-                   fs.unlink(shabad_english_title + ".mp3");
-                   res.json("Shabad uploaded!")
-               }
+               fs.unlink(shabad_english_title + ".mp3");
+               res.json("Shabad uploaded!")
            });
        }
     });

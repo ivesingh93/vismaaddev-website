@@ -22,6 +22,11 @@ export class UploadShabadsComponent implements OnInit {
   selected_recording_url = "";
   selected_shabad_obj = "";
   selected_shabad_english_title = "";
+  selected_shabad_starting_id = 0;
+  selected_shabad_ending_id = 0;
+
+  more_lines_starting_id = 0;
+  more_lines_ending_id = 0;
 
   delete_recording = false;
 
@@ -69,10 +74,6 @@ export class UploadShabadsComponent implements OnInit {
       .catch(error =>  this.toastrService.error('', 'Recording uploading failed!', this.config));
   };
 
-  deleteRecording(value){
-    this.delete_recording = value;
-  }
-
   onShabadSelected(value){
     this.shabad_panktis = [];
     let selectedShabad = value['text'];
@@ -83,9 +84,42 @@ export class UploadShabadsComponent implements OnInit {
     }
 
     this.selected_shabad_english_title = this.selected_shabad_obj['shabad_english_title'];
+    this.selected_shabad_starting_id = this.selected_shabad_obj['starting_id'];
+    this.selected_shabad_ending_id = this.selected_shabad_obj['ending_id'];
+
+    this.more_lines_starting_id = this.selected_shabad_obj['starting_id'];
+    this.more_lines_ending_id = this.selected_shabad_obj['ending_id'];
 
     let componentThis = this;
-    this.restService.getRangeLines(this.selected_shabad_obj['starting_id'], this.selected_shabad_obj['ending_id'])
+    this.restService.getRangeLines(this.more_lines_starting_id, this.more_lines_ending_id)
+      .then(function(data){
+        for(let panktiObj of data){
+          componentThis.shabad_panktis.push(panktiObj['Gurmukhi'])
+        }
+      })
+      .catch(error => console.log(error));
+  }
+
+  showMoreLines(){
+    this.shabad_panktis = [];
+    let componentThis = this;
+    this.more_lines_starting_id -= 2;
+    this.more_lines_ending_id += 2;
+    this.restService.getRangeLines(this.more_lines_starting_id, this.more_lines_ending_id)
+      .then(function(data){
+        for(let panktiObj of data){
+          componentThis.shabad_panktis.push(panktiObj['Gurmukhi'])
+        }
+      })
+      .catch(error => console.log(error));
+  }
+
+  removeExtraLines(){
+    this.shabad_panktis = [];
+    let componentThis = this;
+    this.more_lines_starting_id = this.selected_shabad_obj['starting_id'];
+    this.more_lines_ending_id = this.selected_shabad_obj['ending_id'];
+    this.restService.getRangeLines(this.more_lines_starting_id, this.more_lines_ending_id)
       .then(function(data){
         for(let panktiObj of data){
           componentThis.shabad_panktis.push(panktiObj['Gurmukhi'])
@@ -95,8 +129,20 @@ export class UploadShabadsComponent implements OnInit {
   }
 
   changeShabadTitle(){
-
     this.restService.changeShabadTitle(this.selected_shabad_obj['sathaayi_id'], this.selected_shabad_english_title)
+      .then(data => this.toastrService.success('', data.toString(), this.config))
+      .catch(error => console.log(error));
+  }
+
+  changeStartingID(){
+    this.restService.changeStartingID(this.selected_shabad_obj['starting_id'], this.selected_shabad_starting_id)
+      .then(data => this.toastrService.success('', data.toString(), this.config))
+      .catch(error => console.log(error));
+
+  }
+
+  changeEndingID(){
+    this.restService.changeEndingID(this.selected_shabad_obj['ending_id'], this.selected_shabad_ending_id)
       .then(data => this.toastrService.success('', data.toString(), this.config))
       .catch(error => console.log(error));
   }
@@ -105,7 +151,7 @@ export class UploadShabadsComponent implements OnInit {
 
     this.toastrService.warning('', "Please wait while shabad is being uploaded...", this.config);
     this.selected_shabad_obj['shabad_english_title'] = this.selected_shabad_english_title;
-    this.restService.uploadShabad(this.selected_shabad_obj, this.selected_raagi, this.selected_recording_title, this.delete_recording)
+    this.restService.uploadShabad(this.selected_shabad_obj, this.selected_raagi, this.selected_recording_title)
       .then(data =>  this.toastrService.success('', data.toString(), this.config))
       .catch(error =>  this.toastrService.error('', 'Shabad uploading failed!', this.config));
   }

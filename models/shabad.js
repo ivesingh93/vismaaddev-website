@@ -7,8 +7,8 @@ const ShabadSchema = new Schema({
     starting_id: {type: Number},
     ending_id: {type: Number},
     shabad_checked: {type: Boolean, default: false},
+    shabad_theme: [{type: String, default: "none"}],
     kirtan_id: {type: Number},
-    moment: {type: String},
     date_added: {type: Date, default: Date.now}
 });
 

@@ -1,0 +1,68 @@
+<div class="container-fluid">
+
+  <h1>Shabads Themes</h1>
+
+  <br>
+
+  <div class="form-group">
+
+    <div class="row">
+
+      <!--Shabads, Themes-->
+      <div class="col-md-4">
+
+        <!--Shabads-->
+        <div>
+          <label for="shabads">Shabads</label>
+          <br>
+          <ng-select
+            id="shabads"
+            *ngIf="shabad_english_titles.length > 0"
+            placeholder="Select Shabad"
+            (selected)="onShabadSelected($event)"
+            [items]="shabad_english_titles">
+          </ng-select>
+        </div>
+
+        <br>
+
+        <!--Themes-->
+        <div>
+          <label for="themes">Themes</label>
+          <br>
+          <ng-select
+            id="themes"
+            [multiple]="true"
+            [items]="themes"
+            (data)="refreshValue($event)"
+            placeholder="Select theme(s)">
+          </ng-select>
+        </div>
+
+        <br>
+
+        <!--Submit-->
+        <button class="btn btn-primary btn-sm" (click)="submitThemes()">Submit</button>&nbsp;
+
+      </div>
+
+      <!--Shabad Panktis-->
+      <div class="col-md-8">
+        <div>
+          <h3>Ang: {{selected_shabad_ang}}</h3>
+        </div>
+        <br><br>
+        <div *ngFor="let pankti of selected_shabad_rows">
+          <span style='font-family: GurbaniLipi; font-size: 38px; text-align: center; color: black;'>{{pankti['Gurmukhi']}}</span>
+          <br>
+          <span style='font-family: GurbaniLipi; font-size: 28px; text-align: center; color: green'>{{pankti['Teeka_Arth']}}</span>
+          <br *ngIf="pankti['Teeka_Arth']">
+          <span style='font-size: 28px; text-align: center; color: blue'>{{pankti['English']}}</span>
+          <br><br>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>

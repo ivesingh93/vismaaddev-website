@@ -25,11 +25,14 @@ import { LoopObjectsPipe } from './shared/pipes/loop-objects.pipe';
 import {MatCheckboxModule} from '@angular/material';
 import { UploadShabadsComponent } from './rest/shabads/upload-shabads/upload-shabads.component';
 import { ShabadsComponent } from './rest/shabads/shabads.component';
+import { ShabadsThemesComponent } from './rest/shabads-themes/shabads-themes.component';
+import { KeysPipe } from './shared/pipes/keys.pipe';
 
 
 const appRoutes: Routes = [
   {path: 'recordings', component: RecordingsComponent},
-  {path: 'shabads', component: ShabadsComponent}
+  {path: 'shabads', component: ShabadsComponent},
+  {path: 'shabads_themes', component: ShabadsThemesComponent}
 ];
 
 
@@ -42,7 +45,9 @@ const appRoutes: Routes = [
     KeysValuePipe,
     LoopObjectsPipe,
     UploadShabadsComponent,
-    ShabadsComponent
+    ShabadsComponent,
+    ShabadsThemesComponent,
+    KeysPipe
   ],
   imports: [
     BrowserModule,

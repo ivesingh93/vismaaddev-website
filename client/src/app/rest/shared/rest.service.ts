@@ -5,7 +5,7 @@ import 'rxjs/add/operator/toPromise';
 @Injectable()
 export class RestService{
   //http://localhost:3000
-  private LOCALHOST = "http://localhost:3000";
+  private LOCALHOST = "";
 
   private RAAGIS_URL = this.LOCALHOST +  "/api/raagiRoutes/raagis";
   private ADD_RAAGI_URL = this.LOCALHOST +  "/api/raagiRoutes/addRaagi";
@@ -23,7 +23,11 @@ export class RestService{
   private UPLOAD_RECORDING = this.LOCALHOST + "/api/raagiRoutes/uploadRecording";
   private UPLOAD_SHABAD = this.LOCALHOST + "/api/raagiRoutes/uploadShabad";
   private CHANGE_SHABAD_TITLE = this.LOCALHOST + "/api/raagiRoutes/changeShabadTitle";
-  private GET_SHABAD_BY_SATHAAYI_ID = this.LOCALHOST + "/api/raagiRoutes/shabads/"
+  private CHANGE_STARTING_ID = this.LOCALHOST + "/api/raagiRoutes/changeStartingID";
+  private CHANGE_ENDING_ID = this.LOCALHOST + "/api/raagiRoutes/changeEndingID";
+  private GET_SHABAD_BY_SATHAAYI_ID = this.LOCALHOST + "/api/raagiRoutes/shabads/";
+  private GET_SHABADS_WITH_NO_THEMES = this.LOCALHOST + "/api/raagiRoutes/shabadsWithNoThemes"
+  private ADD_SHABAD_THEMES = this.LOCALHOST + "/api/raagiRoutes/addShabadThemes/"
 
   constructor(private http: Http){}
 
@@ -84,6 +88,25 @@ export class RestService{
 
   }
 
+  getShabadsWithNoThemes(): Promise<any>{
+    return this.http.get(this.GET_SHABADS_WITH_NO_THEMES)
+      .toPromise()
+      .then(this.extractData)
+      .catch(this.handleError);
+
+  }
+
+  addShabadThemes(shabad_english_title, themes){
+    let headers = new Headers({ 'Content-Type': 'application/json' });
+    let options = new RequestOptions({ headers: headers });
+
+
+    return this.http.put(this.ADD_SHABAD_THEMES + shabad_english_title, themes, options)
+      .toPromise()
+      .then(this.extractData)
+      .catch(this.handleError);
+  }
+
   getShabadBySathaayiID(sathaayiID): Promise<any>{
     return this.http.get(this.GET_SHABAD_BY_SATHAAYI_ID + sathaayiID)
       .toPromise()
@@ -140,15 +163,14 @@ export class RestService{
       .catch(this.handleError);
   }
 
-  uploadShabad(shabadObj, raagi_name, recording_title, delete_recording){
+  uploadShabad(shabadObj, raagi_name, recording_title){
     let headers = new Headers({ 'Content-Type': 'application/json' });
     let options = new RequestOptions({ headers: headers });
 
     let obj = {
       shabad: shabadObj,
       raagi_name: raagi_name,
-      recording_title: recording_title,
-      delete_recording: delete_recording
+      recording_title: recording_title
     };
 
     return this.http.post(this.UPLOAD_SHABAD,
@@ -183,6 +205,36 @@ export class RestService{
     };
 
     return this.http.put(this.CHANGE_SHABAD_TITLE, obj, options)
+      .toPromise()
+      .then(this.extractData)
+      .catch(this.handleError);
+  }
+
+  changeStartingID(original_starting_id, new_starting_id){
+    let headers = new Headers({ 'Content-Type': 'application/json' });
+    let options = new RequestOptions({ headers: headers });
+
+    let obj = {
+      original_starting_id: original_starting_id,
+      new_starting_id: new_starting_id
+    };
+
+    return this.http.put(this.CHANGE_STARTING_ID, obj, options)
+      .toPromise()
+      .then(this.extractData)
+      .catch(this.handleError);
+  }
+
+  changeEndingID(original_ending_id, new_ending_id){
+    let headers = new Headers({ 'Content-Type': 'application/json' });
+    let options = new RequestOptions({ headers: headers });
+
+    let obj = {
+      original_ending_id: original_ending_id,
+      new_ending_id: new_ending_id
+    };
+
+    return this.http.put(this.CHANGE_ENDING_ID, obj, options)
       .toPromise()
       .then(this.extractData)
       .catch(this.handleError);
