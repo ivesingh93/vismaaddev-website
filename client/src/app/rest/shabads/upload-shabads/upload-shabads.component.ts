@@ -22,7 +22,7 @@ export class UploadShabadsComponent implements OnInit {
   selected_recording_url = "";
   selected_shabad_obj = "";
   selected_shabad_english_title = "";
-  selected_shabad_url = "https://s3.amazonaws.com/vismaadbani/vismaaddev/Raagis/";
+  selected_shabad_url = "";
   selected_shabad_starting_id = 0;
   selected_shabad_ending_id = 0;
 
@@ -77,6 +77,7 @@ export class UploadShabadsComponent implements OnInit {
 
   onShabadSelected(value){
     this.shabad_panktis = [];
+    this.selected_shabad_url = "https://s3.amazonaws.com/vismaadbani/vismaaddev/Raagis/";
     let selectedShabad = value['text'];
     for(let shabad of this.shabads_obj){
       if(shabad.shabad_english_title === selectedShabad){
