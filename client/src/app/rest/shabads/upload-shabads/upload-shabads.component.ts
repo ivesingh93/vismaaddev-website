@@ -22,6 +22,7 @@ export class UploadShabadsComponent implements OnInit {
   selected_recording_url = "";
   selected_shabad_obj = "";
   selected_shabad_english_title = "";
+  selected_shabad_url = "https://s3.amazonaws.com/vismaadbani/vismaaddev/Raagis/";
   selected_shabad_starting_id = 0;
   selected_shabad_ending_id = 0;
 
@@ -84,6 +85,9 @@ export class UploadShabadsComponent implements OnInit {
     }
 
     this.selected_shabad_english_title = this.selected_shabad_obj['shabad_english_title'];
+    this.selected_shabad_url += this.selected_raagi + "/" + this.selected_shabad_english_title + ".mp3";
+    this.selected_shabad_url = this.selected_shabad_url.replace(/ /g, "+");
+    console.log(this.selected_shabad_url);
     this.selected_shabad_starting_id = this.selected_shabad_obj['starting_id'];
     this.selected_shabad_ending_id = this.selected_shabad_obj['ending_id'];
 

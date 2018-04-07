@@ -117,6 +117,9 @@
 
         <!--Shabad Info-->
         <div *ngIf="shabad_panktis.length > 0">
+          <audio #shabadPlayer style="width:100%; height: 50%;" controls src="{{selected_shabad_url}}" preload=”auto” (keyup.enter)="onKey($event)">
+            HTML5 audio not supported
+          </audio>
           <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Length: {{selected_shabad_obj['shabad_length']}}</span><br>
           <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Starting Time: {{selected_shabad_obj['shabad_starting_time']}}</span><br>
           <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Ending Time: {{selected_shabad_obj['shabad_ending_time']}}</span><br>

@@ -121,59 +121,6 @@ router.get('/raagi_info', (req, res) => {
     });
 });
 
-router.get('/raagis/:raagi_name/recordings/:recording_title/uploadShabads', (req, res) => {
-   let raagi_name = req.params.raagi_name;
-   let recording_title = req.params.recording_title;
-
-   Raagi.find({"raagi_name": raagi_name}, function(err, foundRaagi){
-        if(err){
-            res.json(err);
-        }else{
-            let recordings = foundRaagi[0].recordings;
-            let recordingObj = {};
-            for(let recording of recordings){
-                if(recording.recording_title === recording_title){
-                    recordingObj = recording;
-                }
-            }
-
-            let cut_shabads_command_arr = [];
-            upload_recording(raagi_name, recordingObj.recording_url, recording_title, function(){
-                async.each(recordingObj.shabads, function(shabad, shabadCallback){
-                    Shabad.findOne({"sathaayi_id": shabad.sathaayi_id}, function(err, foundShabad){
-
-                        if(err){
-                            console.log(err);
-                        }else{
-                            if(foundShabad !== null){
-                                let command = "ffmpeg -y -i " + recording_title.replace(/ /g, "\\ ") + ".mp3 -ss "
-                                    + shabad.shabad_starting_time + " -to " + shabad.shabad_ending_time
-                                    + " -acoder copy " + foundShabad.shabad_english_title.replace(/ /g, "\\ ") + ".mp3";
-
-                                cut_shabads_command_arr.push({
-                                    shabad_english_title: foundShabad.shabad_english_title,
-                                    shabad_starting_time: shabad.shabad_starting_time,
-                                    shabad_ending_time: shabad.shabad_ending_time,
-                                    raagi_name: raagi_name,
-                                    recording_title: recording_title,
-                                    recording_url: recordingObj.recording_url,
-                                    command: command
-                                });
-                            }
-                            shabadCallback();
-                        }
-                    });
-                }, function(){
-                    cut_shabads(cut_shabads_command_arr);
-                    fs.unlink(recording_title + ".mp3");
-                    console.log("Removed " + recording_title + ".mp3 file...");
-                    res.json({"done": true})
-                })
-            });
-        }
-   });
-});
-
 router.get('/shabads', (req, res) => {
     Shabad.find({}, function(err, shabads){
         if(err){
@@ -450,15 +397,27 @@ router.post('/uploadShabad', (req, res) => {
         shabad_ending_time = "01:" + ('0' + (parseInt(shabad_ending_time_arr[0] - 60))).slice(-2) + ":" + shabad_ending_time_arr[1];
     }
 
-    let command = "ffmpeg -y -i " + replaced_recording_title + ".mp3 -ss "
+    // Cut Audio Command with given start/end time
+    let cut_audio_cmd = "ffmpeg -y -i " + replaced_recording_title + ".mp3 -ss "
         + shabad_starting_time + " -to " + shabad_ending_time
-        + " -acodec copy " + shabad_english_title.replace(/ /g, "\\ ") + ".mp3";
+        + " -acodec copy " + shabad_english_title.replace(/ /g, "\\ ") + "\\ temp.mp3";
+    let execute_cut_audio_cmd = child_process.execSync(cut_audio_cmd, { stdio: ['pipe', 'pipe', 'ignore']});
 
-    let log = child_process.execSync(command, { stdio: ['pipe', 'pipe', 'ignore']});
+    // Get Duration of the song and parse to Int
+    let duration_cmd = "ffprobe -i " + shabad_english_title.replace(/ /g, "\\ ") + "\\ temp.mp3 -show_entries format=duration -v quiet -of csv=\"p=0\"";
+    let execute_duration_cmd = child_process.execSync(duration_cmd, { stdio: ['pipe', 'pipe', 'ignore']});
+    let end_seconds = parseInt(execute_duration_cmd.toString());
+
+    // Add Fade in and Fade out by 4 seconds to the mp3.
+    let fade_cmd = "ffmpeg -i " + shabad_english_title.replace(/ /g, "\\ ") + "\\ temp.mp3 "
+        + "-af \"afade=t=in:ss=0:d=4,afade=t=out:st=" + (end_seconds - 4) + ":d=4\" " + shabad_english_title.replace(/ /g, "\\ ") + ".mp3";
+    let execute_fade_cmd = child_process.execSync(fade_cmd, { stdio: ['pipe', 'pipe', 'ignore']});
+
+
 
     Shabad.update({"starting_id": starting_id, "ending_id": ending_id}, {$set: {"shabad_checked": true}}, {multi: true}, function(err, numAffected){
         console.log(numAffected);
-        upload_shabad(shabad_english_title, raagi_name, recording_title, res)
+        upload_shabad(shabad_english_title, raagi_name, res)
     });
 
 
@@ -597,7 +556,7 @@ function add_shabad(shabad, shabadCallback){
     });
 }
 
-function upload_shabad(shabad_english_title, raagi_name, recording_title, res){
+function upload_shabad(shabad_english_title, raagi_name, res){
     let s3 = new AWS.S3();
     fs.readFile(shabad_english_title + ".mp3", function(err, data){
        if(err){
@@ -611,7 +570,9 @@ function upload_shabad(shabad_english_title, raagi_name, recording_title, res){
                ContentType: "audio/mpeg"
            };
            s3.putObject(params, function(err, data){
+               if(err) throw err;
                fs.unlink(shabad_english_title + ".mp3");
+               fs.unlink(shabad_english_title + " temp.mp3");
                res.json("Shabad uploaded!")
            });
        }

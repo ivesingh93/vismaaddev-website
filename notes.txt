@@ -46,7 +46,7 @@ DEPLOY NOTES:
 CONNECT TO AWS:
 ---------------
 
-1. Go to /Users/ivesingh/Documents/WebStormProjects/vismaadprod/aws
+1. Go to /Users/ivesingh/Documents/WebStormProjects
 2. Run ssh -i sehaj-bani.pem ubuntu@ec2-54-91-116-103.compute-1.amazonaws.com
 
 APP IN BACKGROUND:
