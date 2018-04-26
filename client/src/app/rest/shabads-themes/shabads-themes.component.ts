@@ -19,11 +19,11 @@ export class ShabadsThemesComponent implements OnInit {
   selected_shabad_ang = 0;
 
   private selected_themes = [];
-  private themes:Array<string> = ["Being away from home", "Beautification of soul", "Happiness due to meeting the Lord", "Union",
-    "Surprise", "Maaya", "Detachment", "Yearning to merge with Lord", "Giving up of negative values", "Principles", "Seriousness",
-    "Thoughtfulness", "Composed", "Hope", "Prayer", "Merging with Spouse", "Self-realization", "Yearning due to separation", "Merits of God",
-    "Stability", "Motivation to sing praises of Lord", "To give up the life of a wandering jogi", "Bravery", "Profound Philosophy",
-    "Love", "State of Hell"];
+  private themes:Array<string> = ["Bani & Satsangat", "Maaya & Moh", "Ustath & Akath Katha", "Hauumain & Vicchodda",
+    "Naam Rass & Simran", "Sharan & Bhaanna", "Benti & Ardaas", "Milaap & Anand", "Sukh & Sehaj", "Kirtan & Har Jass",
+    "Sevak & Seva", "Bhagat & Bhagti", "Mann & Jindh", "Janam Maran & Maanas Janam", "Kirpa & Mehar", "Guru Ustat & Vaara",
+    "Viraag & Milaap", "Manmukh & Gurmukh", "Gursikhi & Nimarta", "Baksh Laye & Sharan", "Ninda & Saakat Sang", "Payaas & Darshan"
+  ];
 
   config: ToastConfig = {
     positionClass: 'toast-bottom-full-width',
