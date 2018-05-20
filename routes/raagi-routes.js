@@ -58,7 +58,6 @@ router.get('/raagis', (req, res) =>{
                                             "shabad_ending_time": shabad.shabad_ending_time
                                         });
                                     }else{
-                                        console.log("Raagi Name: " + raagi.raagi_name + " Shabad Sathaayi ID: " + shabad.sathaayi_id);
                                     }
 
                                 }
@@ -537,16 +536,21 @@ function add_shabad(shabad, shabadCallback){
     newShabad.starting_id = shabad.starting_id;
     newShabad.ending_id = shabad.ending_id;
 
+
+    console.log(newShabad);
+    console.log("Adding a shabad");
+
     Shabad.count({"sathaayi_id": newShabad.sathaayi_id}, function(err, foundShabad){
         if(err){
             console.log(err);
         }else{
             if(foundShabad === 0){
+                // If shabad not found, then save the new shabad.
                 newShabad.save(function(err){
                     if(err){
-                        res.json(err);
+                        console.log(err);
                     }else{
-
+                        console.log("New Shabad Added Successfully.");
                     }
                 });
             }else if(foundShabad === 1){
