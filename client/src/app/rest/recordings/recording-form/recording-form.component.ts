@@ -322,12 +322,11 @@ export class RecordingFormComponent implements OnInit {
   // Set selectedShabads to a value that's selected, only if shabad already exists.
   onShabadSelected(value: any, index){
     this.selectedShabads[index] = value['text'];
-    let shabadExist = false;
 
+    // Check if the selected raagi has the current selected shabad. If so, then set the starting/ending time: 00:00
     if(this.selectedRaagi){
       for(let i = 0; i < this.shabadsByRaagiList.length; i++){
-        if(this.shabadsByRaagiList[i] === this.selectedShabads[index]){
-          shabadExist = true;
+        if(this.shabadsByRaagiList[i].shabad_english_title === this.selectedShabads[index]){
           this.toastrService.warning('', this.selectedShabads[index] + ' shabad already exists of this raagi. ' +
             'Starting/Ending time has been set to 00:00', this.config);
           this.recordingForm.controls['shabads']['controls'][index]['controls']['shabadStartingTime'].setValue("00:00");
