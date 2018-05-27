@@ -73,7 +73,7 @@ export class RecordingListComponent implements OnInit {
       this.raagisRecordingsShabads.push(raagiObj);
     }
 
-    this.raagisRecordings = this.raagisRecordings.splice(0,20).sort(this.compareByDate);
+    this.raagisRecordings = this.raagisRecordings.sort(this.compareByDate).splice(0,20);
     this.raagisRecordingsShabads.sort(this.compareByName);
   }
 
