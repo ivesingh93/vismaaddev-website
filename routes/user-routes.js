@@ -6,6 +6,23 @@ const jwt = require('jsonwebtoken');
 const config = require('../config/database');
 const _ = require('underscore');
 
+
+
+/*
+
+{
+  "account_id": "mraval.singh@gmail.com",
+  "username": "ivesingh",
+  "password": "9april1993",
+  "dob": "04/09/1993",
+  "gender": "Male",
+  "first_name": "Ivkaran",
+  "last_name": "Singh",
+  "source_of_login": "Email"
+}
+ */
+
+// Register users who are using Email
 router.post('/signup', (req, res) => {
    let newUser = new User({
        account_id: req.body.account_id,
@@ -16,12 +33,12 @@ router.post('/signup', (req, res) => {
        source_of_login: req.body.source_of_login
    });
 
-   // User.getUserById(newUser.account_id, (err, user) => {
-   //      if(err) throw err;
-   //      if(!user){
-   //          User.getUserByUsername(newUser.username, (err, user) => {
-   //              if(err) throw err;
-   //              if(!user){
+   User.getUserById(newUser.account_id, (err, user) => {
+        if(err) throw err;
+        if(!user){
+            User.getUserByUsername(newUser.username, (err, user) => {
+                if(err) throw err;
+                if(!user){
                     User.addUser(newUser, function(err) {
                         if (err) {
                             res.json({"message": "Error adding User. \n" + err});
@@ -29,20 +46,18 @@ router.post('/signup', (req, res) => {
                             res.json({"message": "User Added Successfully!"});
                         }
                     });
-   //              }else{
-   //                  res.json({"message": "The username entered has already been used!"});
-   //              }
-   //          });
-   //      }else{
-   //          res.json({"message": "The email entered has already been used!"});
-   //      }
-   // });
-
-
-
+                }else{
+                    res.json({"message": "The username entered has already been used!"});
+                }
+            });
+        }else{
+            res.json({"message": "The email entered has already been used!"});
+        }
+   });
 
 });
 
+/*
 router.get('/accounts/:account_id', (req, res) => {
     User.getUserById(req.params.account_id, function(err, user) {
         if(err){
@@ -70,7 +85,9 @@ router.get('/usernames/:username', (req, res) => {
         }
     })
 });
+*/
 
+// Authenticate users who registered via Email.
 router.post('/authenticate', (req, res) => {
     const username = req.body.username;
     const password = req.body.password;
@@ -108,6 +125,62 @@ router.post('/authenticate', (req, res) => {
 
 router.get('/profile', passport.authenticate('jwt', {session: false}), (req, res) => {
     res.json({user: req.user});
+});
+
+// =================================================== REST FOR PLAYLIST ===============================================
+
+// Create a Playlist Name only
+router.post('/createPlaylist', (req, res) => {
+    let account_id = req.body.account_id;
+    let playlist_name = req.body.playlist_name;
+
+    // Add a unique playlist_name here with no shabads.
+    User.update({"account_id": account_id}, {$push: {"playlists": {"playlist_name": playlist_name}}}, (req, response) => {
+        res.send("Playlist created successfully!");
+    });
+
+});
+
+// Add shabads to the Existing Playlist
+router.post('/addShabad', (req, res) => {
+    let account_id = req.body.account_id;
+    let playlist_name = req.body.playlist_name;
+    let raagi_name = req.body.raagi_name;
+    let sathaayi_id = req.body.sathaayi_id;
+    let shabadObj = {'raagi_name': raagi_name, 'sathaayi_id': sathaayi_id};
+
+    // Add a shabad to the existing Playlist.
+    User.update({"account_id": account_id, "playlists.playlist_name": playlist_name},
+        {$push: {"playlists.$.shabads": shabadObj}}, (req, response) => {
+        res.send("Shabad added successfully!");
+    });
+
+});
+
+// Remove shabad from an Existing Playlist
+router.post('/removeShabad', (req, res) => {
+    let account_id = req.body.account_id;
+    let playlist_name = req.body.playlist_name;
+    let sathaayi_id = req.body.sathaayi_id;
+    let raagi_name = req.body.raagi_name;
+    let shabadObj = {'raagi_name': raagi_name, 'sathaayi_id': sathaayi_id};
+
+    // Find if shabad is in there and remove the shabad from the playlist.
+    User.update({"account_id": account_id, "playlists.playlist_name": playlist_name},
+        {$pull: {"playlists.$.shabads": shabadObj}}, (req, response) => {
+        res.send("Shabad removed successfully!");
+    });
+});
+
+router.post('/deletePlaylist', (req, res) => {
+    let account_id = req.body.account_id;
+    let playlist_name = req.body.playlist_name;
+
+    // Find if the playlist exists and then delete the entire playlist.
+    User.update({"account_id": account_id}, {$pull: {"playlists": {"playlist_name": playlist_name}}}, (req, response) => {
+        res.send("Playlist deleted successfully!");
+    });
+
 });
 
 module.exports = router;

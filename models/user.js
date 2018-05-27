@@ -3,8 +3,26 @@ const bcrypt = require('bcryptjs');
 const config = require('../config/database');
 const Schema = mongoose.Schema;
 
+
+/*
+
+    Account ID: Unique Account ID.
+                    If user registers with an email, this will be an email.
+                    If user registers with Facebook, this will be either an email or some sort of unique id
+                    If user registers with Gmail, this will be an email
+
+    Date Added: Date the account was created
+    Username: User's unique username
+    Password: This is only if the user signs up using an email.
+    First Name: The first name of the user may be taken from registration form, Facebook/Google Authentication.
+    Last Name: The first name of the user may be taken from registration form, Facebook/Google Authentication.
+    Date of Birth: DoB of the user
+    Gender: Gender of the user
+    Source of Login: This will be either, Email or Google or Facebook
+
+ */
 const UserSchema = new Schema({
-    account_id: {type: String},
+    account_id: {type: String, unique: true},
     date_added: {type: Date, default: Date.now},
     username: {type: String},
     password: {type: String},
@@ -12,7 +30,14 @@ const UserSchema = new Schema({
     last_name: {type: String},
     dob: {type: Date},
     gender: {type: String},
-    source_of_login: {type: String}
+    source_of_login: {type: String},
+    playlists: [{
+        playlist_name: {type: String},
+        shabads: [{
+            raagi_name: {type: String},
+            sathaayi_id: {type: Number},
+        }]
+    }]
 
 });
 
