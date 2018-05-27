@@ -35,7 +35,11 @@ const UserSchema = new Schema({
         playlist_name: {type: String},
         shabads: [{
             raagi_name: {type: String},
+            shabad_english_title: {type: String},
             sathaayi_id: {type: Number},
+            starting_id: {type: Number},
+            ending_id: {type: Number},
+            shabad_url: {type: String},
         }]
     }]
 

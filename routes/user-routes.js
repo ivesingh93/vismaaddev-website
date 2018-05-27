@@ -147,7 +147,19 @@ router.post('/addShabad', (req, res) => {
     let playlist_name = req.body.playlist_name;
     let raagi_name = req.body.raagi_name;
     let sathaayi_id = req.body.sathaayi_id;
-    let shabadObj = {'raagi_name': raagi_name, 'sathaayi_id': sathaayi_id};
+    let shabad_english_title = req.body.shabad_english_title;
+    let starting_id = req.body.starting_id;
+    let ending_id = req.body.ending_id;
+    let shabad_url = req.body.shabad_url;
+
+    let shabadObj = {
+        'raagi_name': raagi_name,
+        'sathaayi_id': sathaayi_id,
+        'shabad_english_title': shabad_english_title,
+        'starting_id': starting_id,
+        'ending_id': ending_id,
+        'shabad_url': shabad_url
+    };
 
     // Add a shabad to the existing Playlist.
     User.update({"account_id": account_id, "playlists.playlist_name": playlist_name},
@@ -161,9 +173,21 @@ router.post('/addShabad', (req, res) => {
 router.post('/removeShabad', (req, res) => {
     let account_id = req.body.account_id;
     let playlist_name = req.body.playlist_name;
-    let sathaayi_id = req.body.sathaayi_id;
     let raagi_name = req.body.raagi_name;
-    let shabadObj = {'raagi_name': raagi_name, 'sathaayi_id': sathaayi_id};
+    let sathaayi_id = req.body.sathaayi_id;
+    let shabad_english_title = req.body.shabad_english_title;
+    let starting_id = req.body.starting_id;
+    let ending_id = req.body.ending_id;
+    let shabad_url = req.body.shabad_url;
+
+    let shabadObj = {
+        'raagi_name': raagi_name,
+        'sathaayi_id': sathaayi_id,
+        'shabad_english_title': shabad_english_title,
+        'starting_id': starting_id,
+        'ending_id': ending_id,
+        'shabad_url': shabad_url
+    };
 
     // Find if shabad is in there and remove the shabad from the playlist.
     User.update({"account_id": account_id, "playlists.playlist_name": playlist_name},
@@ -181,6 +205,15 @@ router.post('/deletePlaylist', (req, res) => {
         res.send("Playlist deleted successfully!");
     });
 
+});
+
+router.get('/users/:account_id/playlists', (req, res) => {
+   let account_id = req.params.account_id;
+
+   User.findOne({"account_id": account_id}, (err, user) => {
+       console.log(user.playlists);
+       res.send(user.playlists);
+   })
 });
 
 module.exports = router;
