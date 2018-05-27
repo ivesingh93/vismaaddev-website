@@ -41,6 +41,7 @@ router.get('/raagis', (req, res) =>{
                             "recording_title": recording.recording_title,
                             "recording_date": recording.recording_date,
                             "recording_url": recording.recording_url,
+                            "date_added": recording.date_added,
                             "shabads": []
                         };
 
