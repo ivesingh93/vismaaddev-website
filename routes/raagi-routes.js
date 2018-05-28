@@ -182,7 +182,8 @@ router.get('/raagis/:raagi_name/recordingsInfo', (req, res) =>{
             for(let recording of recordingsObj.recordings){
                 recordings.push({
                     recording_title: recording.recording_title,
-                    recording_url: recording.recording_url
+                    recording_url: recording.recording_url,
+                    date_added: recording.date_added
                 });
             }
             if(!recordings){

@@ -178,7 +178,9 @@ export class UploadShabadsComponent implements OnInit {
   private extractRecordingsObj(data){
     this.recordings_obj = data;
     this.recording_titles = [];
-    for(let recordingObj of data){
+    this.recordings_obj = this.recordings_obj.sort(this.compareByDate);
+    console.log(this.recordings_obj);
+    for(let recordingObj of this.recordings_obj){
       this.recording_titles.push(recordingObj.recording_title);
     }
   }
@@ -195,6 +197,15 @@ export class UploadShabadsComponent implements OnInit {
     this.restService.getRaagiNames()
       .then(data => this.raagi_names = data.sort())
       .catch(error => console.log(error));
+  }
+
+  //Reverse - by most recent
+  private  compareByDate(a,b) {
+    if (a.date_added < b.date_added)
+      return 1;
+    if (a.date_added > b.date_added)
+      return -1;
+    return 0;
   }
 
 }

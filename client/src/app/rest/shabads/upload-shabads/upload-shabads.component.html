@@ -38,7 +38,7 @@
           <br>
           <div *ngIf="selected_recording_title">
             <button class="btn btn-primary btn-md" type="submit" (click)="uploadRecordingToAWS()">
-              Upload Recording to AWS
+              Upload Recording
             </button>
           </div>
           <br>
@@ -61,7 +61,7 @@
           <label for="shabadTitle">Shabad Title: </label>&nbsp;&nbsp;
           <input type="text" id="shabadTitle" style="width:250px;" [(ngModel)]="selected_shabad_english_title">&nbsp;&nbsp;
           <button class="btn btn-primary btn-md" type="button" (click)="changeShabadTitle()">Change Shabad Title</button>&nbsp;
-          <button class="btn btn-primary btn-md" type="submit" *ngIf="selected_shabad_obj" (click)="uploadShabadToAWS()">Upload Shabad to AWS</button>
+          <button class="btn btn-primary btn-md" type="submit" *ngIf="selected_shabad_obj" (click)="uploadShabadToAWS()">Upload Shabad</button>
         </div>
 
         <br>

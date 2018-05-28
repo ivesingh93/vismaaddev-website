@@ -265,6 +265,7 @@ export class RecordingFormComponent implements OnInit {
           componentThis.startingLines = [];
           componentThis.endingLines = [];
           componentThis.toastrService.warning('', shabadObj.shabad_english_title + " shabad found! Please select the shabad from Shabad Title.", componentThis.config);
+
         }
       })
       .catch(error => console.log(error));
