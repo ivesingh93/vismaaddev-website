@@ -1,11 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
-const { Client } = require('pg');
+const { Pool, Client } = require('pg');
 const config = require('../config/database');
 
 function initialize_client(){
     return new Client(config.database);
+}
+
+function initialize_pool(){
+    return new Pool(config.database);
 }
 
 /*
@@ -125,12 +129,33 @@ router.post('/addShabad', (req, res) => {
     });
 });
 
+router.post('/addShabads', (req, res) => {
+    (async () => {
+        const client = await initialize_pool().connect();
+        try{
+            await client.query('BEGIN');
+            for(let shabad of req.body){
+                await client.query("update playlist set raagi_recording_shabad_id=$1 where playlist_name=$2 and username=$3",
+                    [shabad.id, shabad.playlist_name, shabad.username]);
+            }
+            await client.query('COMMIT');
+            res.json("Success!");
+        }catch(e){
+            await client.query('ROLLBACK');
+            throw e
+        }finally{
+            client.release();
+        }
+    })().catch(e => console.error(e.stack));
+
+});
+
 router.post('/removeShabad', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "update playlist set raagi_recording_shabad_id=$1 where playlist_name=$2 and username=$3",
-        values: [req.body.id, req.body.playlist_name, req.body.username]
+        text: "delete from playlist where username=$1 and playlist_name=$2 and raagi_recording_shabad_id=$3",
+        values: [req.body.username, req.body.playlist_name, req.body.id]
     };
     client.query(query, (err, sqlResponse) => {
         if(err){
@@ -141,6 +166,26 @@ router.post('/removeShabad', (req, res) => {
         }
         client.end();
     });
+});
+
+router.post('/removeShabads', (req, res) => {
+    (async () => {
+        const client = await initialize_pool().connect();
+        try{
+            await client.query('BEGIN');
+            for(let shabad of req.body){
+                await client.query("delete from playlist where username=$1 and playlist_name=$2 and raagi_recording_shabad_id=$3",
+                    [shabad.username, shabad.playlist_name, shabad.id]);
+            }
+            await client.query('COMMIT');
+            res.json("Success!");
+        }catch(e){
+            await client.query('ROLLBACK');
+            throw e
+        }finally{
+            client.release();
+        }
+    })().catch(e => console.error(e.stack));
 });
 
 router.get('/users/:username/playlists', (req, res) => {
