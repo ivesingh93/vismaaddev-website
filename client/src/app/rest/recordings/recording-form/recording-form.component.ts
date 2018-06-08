@@ -51,10 +51,9 @@ export class RecordingFormComponent implements OnInit {
 
   ngOnInit(){
     this.getRaagiNames();
-    this.raagiNamesList.unshift("Add New Raagi");
     this.getRecordingURLs();
     this.getShabads();
-    this.shabadsList.unshift("Add New Shabad");
+
     this.recordingForm = new FormGroup({
       raagiName: new FormControl(null),
       newRaagiName: new FormControl(null, Validators.required),
@@ -69,8 +68,12 @@ export class RecordingFormComponent implements OnInit {
 
   // REST call to GET Raagis and Recordings
   getRaagiNames(){
+    let componentThis = this;
     this.restService.getRaagiNames()
-      .then(data => this.raagiNamesList = data)
+      .then(function(data){
+        componentThis.raagiNamesList = data;
+        componentThis.raagiNamesList.unshift("Add New Raagi");
+      })
       .catch(error => console.log(error));
   }
 
@@ -204,7 +207,7 @@ export class RecordingFormComponent implements OnInit {
         }else{
           this.restService.addRaagiRecording(raagiObj)
             .then(data => this.toastrService.success('', 'Recording Added Successfully!', this.config))
-            .catch(error => this.toastrService.error('', 'Oopss! An error has occurred. Please recheck your submission', this.config));
+            .catch(error => console.log(error));
         }
       }
 
@@ -494,6 +497,7 @@ export class RecordingFormComponent implements OnInit {
       this.existedShabads.push(shabadObj);
       this.shabadsList.push(shabadObj.shabad_english_title);
     }
+    this.shabadsList.unshift("Add New Shabad");
   }
 
   // Add a new control

@@ -221,7 +221,7 @@ router.post('/addRaagiRecording', (req, res) =>{
                     [req.body.raagi_name, req.body.recordings[0].recording_title, shabad.shabad_english_title, shabad.shabad_starting_time, shabad.shabad_ending_time, shabad_length]);
             }
             await client.query('COMMIT');
-            res.send("Success");
+            res.json("Success");
         }catch(e){
             await client.query('ROLLBACK');
             throw e
@@ -316,7 +316,7 @@ router.put('/changeShabadTitle', (req, res) => {
     client.connect();
     client.query('update shabad set sathaayi_title=$1 where sathaayi_title=$2', [req.body.new_shabad_english_title,
         req.body.old_shabad_english_title], (err, sqlResponse) => {
-        res.send("Success");
+        res.json("Success");
         client.end();
     });
 });
@@ -326,7 +326,7 @@ router.put('/changeStartingID', (req, res) => {
     client.connect();
     client.query('update shabad_info set starting_id=$1 where starting_id=$2', [req.body.new_starting_id,
         req.body.original_starting_id], (err, sqlResponse) => {
-        res.send("Success");
+        res.json("Success");
         client.end();
     });
 });
@@ -336,7 +336,7 @@ router.put('/changeEndingID', (req, res) => {
     client.connect();
     client.query('update shabad_info set ending_id=$1 where ending_id=$2', [req.body.new_ending_id,
         req.body.original_ending_id], (err, sqlResponse) => {
-        res.send("Success");
+        res.json("Success");
         client.end();
     });
 });
@@ -360,7 +360,7 @@ router.put('/raagis/:raagi_name/recordings/:recording_title/addShabads', (req, r
                     [req.params.raagi_name, req.params.recording_title, shabad.shabad_english_title, shabad.shabad_starting_time, shabad.shabad_ending_time, shabad_length]);
             }
             await client.query('COMMIT');
-            res.send("Success!");
+            res.json("Success!");
         }catch(e){
             await client.query('ROLLBACK');
             throw e

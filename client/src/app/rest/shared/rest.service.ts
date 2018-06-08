@@ -12,7 +12,7 @@ export class RestService{
   private GET_LINES_URL = this.LOCALHOST +  "/api/sggsRoutes/linesWithInitials/";
   private GET_RANGE_LINES = this.LOCALHOST +  "/api/sggsRoutes/linesFrom/";
   private GET_SHABAD_LINES = this.LOCALHOST +  "/api/sggsRoutes/shabadLines/"
-  private SHABADS_URL = this.LOCALHOST +  "/api/raagiRoutes/shabads";
+  private GET_SHABADS_URL = this.LOCALHOST +  "/api/raagiRoutes/shabads";
   private GET_RECORDINGS_BY_RAAGI = this.LOCALHOST +  "/api/raagiRoutes/raagis/";
   private ADD_SHABADS_BY_RECORDING = this.LOCALHOST +  "/api/raagiRoutes/raagis/";
   private GET_SHABADS_BY_RAAGI = this.LOCALHOST +  "/api/raagiRoutes/raagis/";
@@ -65,7 +65,7 @@ export class RestService{
   }
 
   getShabads(): Promise<any>{
-    return this.http.get(this.SHABADS_URL)
+    return this.http.get(this.GET_SHABADS_URL)
       .toPromise()
       .then(this.extractData)
       .catch(this.handleError);
@@ -252,6 +252,7 @@ export class RestService{
   }
 
   private handleError(error:any):Promise<any>{
+    console.log(error);
     return Promise.reject("An error occurred. Please check the last operation again.");
   }
 

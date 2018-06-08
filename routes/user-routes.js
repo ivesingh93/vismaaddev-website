@@ -37,9 +37,9 @@ router.post('/signup', (req, res) => {
             client.query(query, (err, sqlResponse) => {
                 if (err){
                     console.log(err);
-                    res.send("Failure");
+                    res.json("Failure");
                 }else{
-                    res.send("Success");
+                    res.json("Success");
                 }
                 client.end();
             });
@@ -64,9 +64,9 @@ router.post('/authenticate', (req, res) => {
                bcrypt.compare(req.body.password, sqlResponse.rows[0].password_hash, (err, isMatch) => {
                    if (err) throw err;
                    if(isMatch){
-                       res.send("Success")
+                       res.json("Success")
                    } else{
-                       res.send('Failure');
+                       res.json('Failure');
                    }
                });
            }else{
@@ -85,9 +85,9 @@ router.post('/createPlaylist', (req, res) => {
     client.query("insert into playlist (playlist_name, username) values ($1, $2)", [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
         if(err){
             console.log(err);
-            res.send('Failure');
+            res.json('Failure');
         }else{
-            res.send('Success');
+            res.json('Success');
         }
         client.end();
     });
@@ -99,9 +99,9 @@ router.post('/deletePlaylist', (req, res) => {
     client.query("delete from playlist where playlist_name=$1 and username=$2", [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
         if(err){
             console.log(err);
-            res.send('Failure');
+            res.json('Failure');
         }else{
-            res.send('Success');
+            res.json('Success');
         }
         client.end();
     });
@@ -117,9 +117,9 @@ router.post('/addShabad', (req, res) => {
     client.query(query, (err, sqlResponse) => {
         if(err){
             console.log(err);
-            res.send('Failure');
+            res.json('Failure');
         }else{
-            res.send('Success');
+            res.json('Success');
         }
         client.end();
     });
@@ -135,9 +135,9 @@ router.post('/removeShabad', (req, res) => {
     client.query(query, (err, sqlResponse) => {
         if(err){
             console.log(err);
-            res.send('Failure');
+            res.json('Failure');
         }else{
-            res.send('Success');
+            res.json('Success');
         }
         client.end();
     });
@@ -153,7 +153,7 @@ router.get('/users/:username/playlists', (req, res) => {
     client.query(query, (err, sqlResponse) => {
         if(err){
             console.log(err);
-            res.send('Failure');
+            res.json('Failure');
         }else{
             let playlists = [];
             for(let row of sqlResponse.rows){
@@ -179,7 +179,7 @@ router.get('/users/:username/playlists/:playlist_name', (req, res) => {
     client.query(query, (err, sqlResponse) => {
         if(err){
             console.log(err);
-            res.send('Failure');
+            res.json('Failure');
         }else{
             res.send(sqlResponse.rows);
             console.log(sqlResponse);
