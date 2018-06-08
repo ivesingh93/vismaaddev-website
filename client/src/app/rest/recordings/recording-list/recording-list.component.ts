@@ -8,28 +8,23 @@ import { RestService } from "../../shared/rest.service";
 })
 export class RecordingListComponent implements OnInit {
 
-  raagisRecordingsShabads = [];
   shabadListObj = [];
   shabadList = [];
+  allShabadList = [];
   panktiList = [];
-  raagisRecordings = [];
-  empty = [0,1]
-  raagiTree = {
-    name: "",
-    children: []
-  };
+  recentRecordings = [];
+
 
   constructor(private restService: RestService) { }
 
   ngOnInit() {
-    this.getRaagis();
+    this.getRecentRecordings();
     this.getShabads();
   }
 
-  // REST call to GET Raagis and Recordings
-  getRaagis(){
-    this.restService.getRaagis()
-      .then(data => this.extractRaagiData(data))
+  getRecentRecordings(){
+    this.restService.getRecentRecordings()
+      .then(data => this.recentRecordings = data)
       .catch(error => console.log(error));
   }
 
@@ -39,42 +34,10 @@ export class RecordingListComponent implements OnInit {
       .then(function(data){
         componentThis.shabadListObj = data;
         for(let shabad of data){
-          componentThis.shabadList.push(shabad.shabad_english_title)
+          componentThis.allShabadList.push(shabad.shabad_english_title)
         }
-        componentThis.shabadList.sort()
       })
       .catch(error => console.log(error));
-  }
-
-  // Create Tree to view in a list.
-  private extractRaagiData(data){
-    for(let raagi of data){
-      let raagiObj = {
-        name: raagi.raagi_name,
-        children: []
-      };
-
-      for(let recording of raagi.recordings){
-        let recordingObj = {
-          name: recording.recording_title,
-          date: recording.date_added,
-          children: []
-        };
-
-        for(let shabad of recording.shabads){
-          recordingObj.children.push({
-            name: shabad.shabad_english_title,
-          });
-        }
-        this.raagisRecordings.push(recordingObj);
-        raagiObj.children.push(recordingObj);
-      }
-
-      this.raagisRecordingsShabads.push(raagiObj);
-    }
-
-    this.raagisRecordings = this.raagisRecordings.sort(this.compareByDate).splice(0,20);
-    this.raagisRecordingsShabads.sort(this.compareByName);
   }
 
   onShabadTitleSelected(shabad){
@@ -95,22 +58,10 @@ export class RecordingListComponent implements OnInit {
     }
   }
 
-  //Sort Alphabetically by Name Object
-  private  compareByName(a,b) {
-    if (a.name < b.name)
-      return -1;
-    if (a.name > b.name)
-      return 1;
-    return 0;
-  }
-
-  //Reverse - by most recent
-  private  compareByDate(a,b) {
-    if (a.date < b.date)
-      return 1;
-    if (a.date > b.date)
-      return -1;
-    return 0;
+  onRecordingTitleSelected(recording_title){
+    this.restService.getShabadsByRecording(recording_title)
+      .then(data => this.shabadList = data)
+      .catch(error => console.log(error));
   }
 
 }

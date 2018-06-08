@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/user');
-const passport = require('passport');
-const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const { Client } = require('pg');
 const config = require('../config/database');
-const _ = require('underscore');
 
-
+function initialize_client(){
+    return new Client(config.database);
+}
 
 /*
 
@@ -24,196 +24,168 @@ const _ = require('underscore');
 
 // Register users who are using Email
 router.post('/signup', (req, res) => {
-   let newUser = new User({
-       account_id: req.body.account_id,
-       username: req.body.username,
-       password: req.body.password,
-       first_name: req.body.first_name,
-       last_name: req.body.last_name,
-       source_of_login: req.body.source_of_login
-   });
-
-   User.getUserById(newUser.account_id, (err, user) => {
-        if(err) throw err;
-        if(!user){
-            User.getUserByUsername(newUser.username, (err, user) => {
-                if(err) throw err;
-                if(!user){
-                    User.addUser(newUser, function(err) {
-                        if (err) {
-                            res.json({"message": "Error adding User. \n" + err});
-                        } else {
-                            res.json({"message": "User Added Successfully!"});
-                        }
-                    });
+    let client = initialize_client();
+    client.connect();
+    bcrypt.genSalt(10, (err, salt) => {
+        bcrypt.hash(req.body.password, salt, (err, hash) => {
+            if (err) throw err;
+            let query = {
+                text: "insert into member (account_id, username, password_hash, first_name, last_name, date_of_birth, gender, source_of_account) " +
+                "values ($1, $2, $3, $4, $5, $6, $7, $8)",
+                values: [req.body.account_id, req.body.username, hash, req.body.first_name, req.body.last_name, req.body.dob, req.body.gender, req.body.source_of_login]
+            };
+            client.query(query, (err, sqlResponse) => {
+                if (err){
+                    console.log(err);
+                    res.send("Failure");
                 }else{
-                    res.json({"message": "The username entered has already been used!"});
+                    res.send("Success");
                 }
+                client.end();
             });
-        }else{
-            res.json({"message": "The email entered has already been used!"});
-        }
-   });
-
-});
-
-/*
-router.get('/accounts/:account_id', (req, res) => {
-    User.getUserById(req.params.account_id, function(err, user) {
-        if(err){
-            res.send(err);
-        }else{
-            if(!user){
-                res.send({"message": "Account not found."})
-            }else{
-                res.send({"message": "The account already exists."})
-            }
-        }
-    })
-});
-
-router.get('/usernames/:username', (req, res) => {
-    User.getUserByUsername(req.params.username, function(err, user) {
-        if(err){
-            res.send(err);
-        }else{
-            if(!user){
-                res.send({"message": "User not found."})
-            }else{
-                res.send({"message": "The username has already been used."})
-            }
-        }
-    })
-});
-*/
-
-// Authenticate users who registered via Email.
-router.post('/authenticate', (req, res) => {
-    const username = req.body.username;
-    const password = req.body.password;
-
-    User.getUserByUsername(username, (err, user) => {
-        if (err) throw err;
-        if(!user){
-            return res.json({message: "User not found"});
-        }
-
-        User.comparePassword(password, user.password, (err, isMatch) => {
-            if(err) throw err;
-            if(isMatch){
-                const token = jwt.sign({data: user}, config.secret, {
-                    expiresIn: 604800
-                });
-
-                res.json({
-                    token: 'Bearer ' + token,
-                    message: "Login successful.",
-                    user: {
-                        id: user._id,
-                        first_name: user.first_name,
-                        last_name: user.last_name,
-                        username: user.username,
-                        email: user.email
-                    }
-                });
-            } else{
-                return res.json({message: 'Wrong Password'});
-            }
         });
     });
 });
 
-router.get('/profile', passport.authenticate('jwt', {session: false}), (req, res) => {
-    res.json({user: req.user});
+router.post('/authenticate', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    let query = {
+        text: "select password_hash from member where account_id=$1 or username=$2",
+        values: [req.body.account_id, req.body.username]
+    };
+
+    client.query(query, (err, sqlResponse) => {
+       if(err){
+           console.log(err);
+           res.send("Failure");
+       } else{
+           if(sqlResponse.rowCount > 0){
+               bcrypt.compare(req.body.password, sqlResponse.rows[0].password_hash, (err, isMatch) => {
+                   if (err) throw err;
+                   if(isMatch){
+                       res.send("Success")
+                   } else{
+                       res.send('Failure');
+                   }
+               });
+           }else{
+               res.send("Failure")
+           }
+       }
+        client.end();
+    });
 });
 
 // =================================================== REST FOR PLAYLIST ===============================================
 
-// Create a Playlist Name only
 router.post('/createPlaylist', (req, res) => {
-    let account_id = req.body.account_id;
-    let playlist_name = req.body.playlist_name;
-
-    // Add a unique playlist_name here with no shabads.
-    User.update({"account_id": account_id}, {$push: {"playlists": {"playlist_name": playlist_name}}}, (req, response) => {
-        res.send("Playlist created successfully!");
-    });
-
-});
-
-// Add shabads to the Existing Playlist
-router.post('/addShabad', (req, res) => {
-    let account_id = req.body.account_id;
-    let playlist_name = req.body.playlist_name;
-    let raagi_name = req.body.raagi_name;
-    let sathaayi_id = req.body.sathaayi_id;
-    let shabad_english_title = req.body.shabad_english_title;
-    let starting_id = req.body.starting_id;
-    let ending_id = req.body.ending_id;
-    let shabad_url = req.body.shabad_url;
-
-    let shabadObj = {
-        'raagi_name': raagi_name,
-        'sathaayi_id': sathaayi_id,
-        'shabad_english_title': shabad_english_title,
-        'starting_id': starting_id,
-        'ending_id': ending_id,
-        'shabad_url': shabad_url
-    };
-
-    // Add a shabad to the existing Playlist.
-    User.update({"account_id": account_id, "playlists.playlist_name": playlist_name},
-        {$push: {"playlists.$.shabads": shabadObj}}, (req, response) => {
-        res.send("Shabad added successfully!");
-    });
-
-});
-
-// Remove shabad from an Existing Playlist
-router.post('/removeShabad', (req, res) => {
-    let account_id = req.body.account_id;
-    let playlist_name = req.body.playlist_name;
-    let raagi_name = req.body.raagi_name;
-    let sathaayi_id = req.body.sathaayi_id;
-    let shabad_english_title = req.body.shabad_english_title;
-    let starting_id = req.body.starting_id;
-    let ending_id = req.body.ending_id;
-    let shabad_url = req.body.shabad_url;
-
-    let shabadObj = {
-        'raagi_name': raagi_name,
-        'sathaayi_id': sathaayi_id,
-        'shabad_english_title': shabad_english_title,
-        'starting_id': starting_id,
-        'ending_id': ending_id,
-        'shabad_url': shabad_url
-    };
-
-    // Find if shabad is in there and remove the shabad from the playlist.
-    User.update({"account_id": account_id, "playlists.playlist_name": playlist_name},
-        {$pull: {"playlists.$.shabads": shabadObj}}, (req, response) => {
-        res.send("Shabad removed successfully!");
+    let client = initialize_client();
+    client.connect();
+    client.query("insert into playlist (playlist_name, username) values ($1, $2)", [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
+        if(err){
+            console.log(err);
+            res.send('Failure');
+        }else{
+            res.send('Success');
+        }
+        client.end();
     });
 });
 
 router.post('/deletePlaylist', (req, res) => {
-    let account_id = req.body.account_id;
-    let playlist_name = req.body.playlist_name;
-
-    // Find if the playlist exists and then delete the entire playlist.
-    User.update({"account_id": account_id}, {$pull: {"playlists": {"playlist_name": playlist_name}}}, (req, response) => {
-        res.send("Playlist deleted successfully!");
+    let client = initialize_client();
+    client.connect();
+    client.query("delete from playlist where playlist_name=$1 and username=$2", [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
+        if(err){
+            console.log(err);
+            res.send('Failure');
+        }else{
+            res.send('Success');
+        }
+        client.end();
     });
-
 });
 
-router.get('/users/:account_id/playlists', (req, res) => {
-   let account_id = req.params.account_id;
+router.post('/addShabad', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    let query = {
+        text: "update playlist set raagi_recording_shabad_id=$1 where playlist_name=$2 and username=$3",
+        values: [req.body.id, req.body.playlist_name, req.body.username]
+    };
+    client.query(query, (err, sqlResponse) => {
+        if(err){
+            console.log(err);
+            res.send('Failure');
+        }else{
+            res.send('Success');
+        }
+        client.end();
+    });
+});
 
-   User.findOne({"account_id": account_id}, (err, user) => {
-       console.log(user.playlists);
-       res.send(user.playlists);
-   })
+router.post('/removeShabad', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    let query = {
+        text: "update playlist set raagi_recording_shabad_id=$1 where playlist_name=$2 and username=$3",
+        values: [req.body.id, req.body.playlist_name, req.body.username]
+    };
+    client.query(query, (err, sqlResponse) => {
+        if(err){
+            console.log(err);
+            res.send('Failure');
+        }else{
+            res.send('Success');
+        }
+        client.end();
+    });
+});
+
+router.get('/users/:username/playlists', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    let query = {
+        text: "select playlist_name from playlist where username=$1",
+        values: [ req.params.username]
+    };
+    client.query(query, (err, sqlResponse) => {
+        if(err){
+            console.log(err);
+            res.send('Failure');
+        }else{
+            let playlists = [];
+            for(let row of sqlResponse.rows){
+                playlists.push(row.playlist_name);
+            }
+            res.send(playlists);
+            console.log(sqlResponse);
+        }
+        client.end();
+    });
+});
+
+router.get('/users/:username/playlists/:playlist_name', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    let query = {
+        text: "select rrs.id, rrs.raagi_name, rrs.shabad_sathaayi_title as shabad_english_title, to_char(rrs.length, 'MI:SS'), rrs.recording_title, shabad_info.sathaayi_id, shabad_info.starting_id, " +
+        "shabad_info.ending_id from playlist join raagi_recording_shabad as rrs on playlist.raagi_recording_shabad_id = rrs.id " +
+        "join shabad on rrs.shabad_sathaayi_title = shabad.sathaayi_title join shabad_info on shabad.sathaayi_id = shabad_info.sathaayi_id " +
+        "where username=$1 and playlist_name=$2 order by rrs.shabad_sathaayi_title",
+        values: [ req.params.username, req.params.playlist_name]
+    };
+    client.query(query, (err, sqlResponse) => {
+        if(err){
+            console.log(err);
+            res.send('Failure');
+        }else{
+            res.send(sqlResponse.rows);
+            console.log(sqlResponse);
+        }
+        client.end();
+    });
 });
 
 module.exports = router;

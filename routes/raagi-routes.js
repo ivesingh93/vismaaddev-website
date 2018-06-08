@@ -1,350 +1,234 @@
 const express = require('express');
 const router = express.Router();
-const Raagi = require('../models/raagi');
-const Shabad = require("../models/shabad");
-const _ = require('underscore');
-const async = require('async');
 const AWS = require('aws-sdk');
 const request = require('request');
 const fs = require('fs');
 const child_process = require('child_process');
+const { Pool, Client } = require('pg');
+const config = require('../config/database');
 
 router.get('/raagiNames', (req, res) =>{
-   Raagi.find({}, function(err, raagis){
-       if(err)throw err;
-
-       let raagi_names = [];
-       for(let raagi of raagis){
-           raagi_names.push(raagi.raagi_name);
-       }
-
-       res.json(raagi_names);
-   }) ;
+    let client = initialize_client();
+    client.connect();
+    let raagi_names = [];
+    client.query("select name from raagi order by name", (err, sqlResponse) => {
+        for(let raagi of sqlResponse.rows){
+            raagi_names.push(raagi.name);
+        }
+        res.send(raagi_names);
+        client.end();
+    });
 });
 
-router.get('/raagis', (req, res) =>{
-    Raagi.find({}, function(err, raagis) {
-        if(err){
-            res.send(err);
-        }else{
-            if(!raagis){
-                res.send("No raagis");
-            }else{
-                let raagisArr = [];
-                async.each(raagis, function(raagi, raagiCallback){
-                    let raagiObj = {
-                        "raagi_name": raagi.raagi_name,
-                        "recordings": []
-                    };
-                    async.each(raagi.recordings, function(recording, recordingCallback){
-                        let recordingObj = {
-                            "recording_title": recording.recording_title,
-                            "recording_date": recording.recording_date,
-                            "recording_url": recording.recording_url,
-                            "date_added": recording.date_added,
-                            "shabads": []
-                        };
-
-                        async.each(recording.shabads, function(shabad, shabadCallback){
-                            Shabad.findOne({"sathaayi_id": shabad.sathaayi_id}, function(err, foundShabad){
-                                if(err){
-                                }else{
-                                    if(foundShabad !== null){
-                                        recordingObj.shabads.push({
-                                            "shabad_english_title": foundShabad.shabad_english_title,
-                                            "sathaayi_id": shabad.sathaayi_id,
-                                            "starting_id": foundShabad.starting_id,
-                                            "ending_id": foundShabad.ending_id,
-                                            "shabad_starting_time": shabad.shabad_starting_time,
-                                            "shabad_ending_time": shabad.shabad_ending_time
-                                        });
-                                    }else{
-                                    }
-
-                                }
-                                shabadCallback();
-                            });
-                        }, function(){
-                            recordingCallback();
-                        });
-                        raagiObj.recordings.push(recordingObj);
-                    }, function(){
-                        raagiCallback();
-                    });
-                    raagisArr.push(raagiObj);
-                }, function(){
-                    res.json(raagisArr);
-                });
-            }
+router.get('/recordingURLs', (req, res) =>{
+    let client = initialize_client();
+    client.connect();
+    let recording_urls = [];
+    client.query("select url from recording order by url", (err, sqlResponse) => {
+        for(let rec_url of sqlResponse.rows){
+            recording_urls.push(rec_url.url);
         }
+        res.send(recording_urls);
+        client.end();
+    });
+});
+
+router.get('/recentRecordings', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    let recent_recordings = [];
+    client.query("select title from recording order by date_added desc limit 20", (err, sqlResponse) => {
+        for(let row of sqlResponse.rows){
+            recent_recordings.push(row.title);
+        }
+        res.send(recent_recordings);
+        client.end();
     });
 });
 
 router.get('/raagi_info', (req, res) => {
-    Raagi.find({}, function(err, raagis){
-        if(err){
-            res.send(err);
-        }else{
-            let raagisInfoArr = [];
-            let raagi_id = 0;
-            for(let raagi of raagis){
-                let raagis_info = {
-                    raagi_id: 0,
-                    raagi_name: raagi.raagi_name,
-                    shabads_count: 0,
-                    raagi_image_url: raagi.raagi_image_url,
-                    minutes_of_shabads: 0
-                };
-                let recordingsArr = raagi.recordings;
-                let totalShabadMinutes = 0;
-                for(let i = 0; i < recordingsArr.length; i++){
-                    let shabadsArr = recordingsArr[i].shabads;
-                    let shabadTimeArr = [];
+    let client = initialize_client();
+    client.connect();
+    const query = "select row_number() over(order by raagi.name) as raagi_id, raagi.name as raagi_name, raagi.image_url as raagi_image_url, " +
+        "count(rrs.shabad_sathaayi_title) as shabads_count, to_char(sum(rrs.length), 'HH24:MI:SS') as total_length " +
+        "from raagi join raagi_recording_shabad as rrs ON raagi.name=rrs.raagi_name group by raagi.name";
 
-                    for(let j = 0; j < shabadsArr.length; j++){
-                        if(shabadsArr[j].shabad_starting_time !== "00:00" && shabadsArr[j].shabad_ending_time !== "00:00" ){
-                            raagis_info.shabads_count++;
-                            shabadTimeArr.push(diff(shabadsArr[j].shabad_starting_time, shabadsArr[j].shabad_ending_time));
-                        }
-                    }
-                    totalShabadMinutes += addInMinutes(shabadTimeArr);
-                }
-                raagi_id++;
-                raagis_info.raagi_id = raagi_id;
-                raagis_info.minutes_of_shabads = totalShabadMinutes;
-                raagisInfoArr.push(raagis_info);
-            }
+    client.query(query, (err, sqlResponse) => {
+        let raagis_info = [];
+        for(let raagi of sqlResponse.rows){
+            let hhmmss = raagi.total_length.split(':');
+            let minutes = (parseInt(hhmmss[0]*60)) + (parseInt(hhmmss[1]));
 
-
-            res.json(raagisInfoArr.sort(compare));
+            raagi.raagi_id = parseInt(raagi.raagi_id);
+            raagi.shabads_count = parseInt(raagi.shabads_count);
+            raagi.minutes_of_shabads = minutes;
+            delete raagi.total_length;
+            raagis_info.push(raagi);
         }
+        res.send(raagis_info);
+        client.end();
     });
 });
 
 router.get('/shabads', (req, res) => {
-    Shabad.find({}, function(err, shabads){
-        if(err){
-            res.json(err);
-        }else{
-            res.json(shabads);
-        }
+    let client = initialize_client();
+    client.connect();
+    let query = "select shabad.sathaayi_title as shabad_english_title, shabad.sathaayi_id, shabad_info.starting_id, shabad_info.ending_id, shabad_info.checked " +
+        "from shabad join shabad_info on shabad.sathaayi_id = shabad_info.sathaayi_id order by shabad.sathaayi_title";
+    client.query(query, (err, sqlResponse) => {
+        res.send(sqlResponse.rows);
+        client.end();
     });
 });
 
-router.get('/shabadsWithNoThemes', (req, res) => {
-   Shabad.find({"shabad_theme": "none"}, function(err, shabads){
-       if(err){
-           res.json(err);
-       }else{
-           res.json(shabads.sort(compareByShabadName));
-       }
-   });
-});
-
+// TODO - Test if this can return multiple rows with same sathaayi_id. For example, what if the same sathaayi_id has more than one sathaayi_title?
 router.get('/shabads/:sathaayi_id', (req, res) => {
-   let sathaayi_id = parseInt(req.params.sathaayi_id);
-
-   Shabad.findOne({"sathaayi_id": sathaayi_id}, function(err, foundShabad){
-      if(err) throw err;
-
-      if(foundShabad !== null){
-          res.json(foundShabad);
-      }else{
-          res.json("Shabad not found");
-      }
-   });
+    let client = initialize_client();
+    let sathaayi_id = parseInt(req.params.sathaayi_id);
+    client.connect();
+    const query = {
+        text: "select * from shabad join shabad_info on shabad.sathaayi_id = shabad_info.sathaayi_id " +
+        "where shabad.sathaayi_id=$1 order by shabad.sathaayi_title",
+        values: [sathaayi_id]
+    };
+    client.query(query, (err, sqlResponse) => {
+        res.send(sqlResponse.rows);
+        client.end();
+    });
 });
 
 router.get('/raagis/:raagi_name/recordings', (req, res) =>{
-    Raagi.findOne({'raagi_name': req.params.raagi_name}, function(err, recordingsObj) {
-        if(err){
-            res.send(err);
-        }else{
-            let recordings = [];
-            for(let recording of recordingsObj.recordings){
-                recordings.push(recording.recording_title);
-            }
-            if(!recordings){
-                res.send("No recordings");
-            }else{
-                res.send(JSON.stringify(recordings));
-            }
+    let client = initialize_client();
+    client.connect();
+    let query = {
+        text: "select distinct recording_title from raagi_recording_shabad where raagi_name=$1 order by recording_title",
+        values: [req.params.raagi_name]
+    };
+    client.query(query, (err, sqlResponse) => {
+        let raagi_recordings = [];
+        for(let recording of sqlResponse.rows){
+            raagi_recordings.push(recording.recording_title);
         }
+        res.send(raagi_recordings);
+        client.end();
     });
 });
 
 router.get('/raagis/:raagi_name/recordingsInfo', (req, res) =>{
-    Raagi.findOne({'raagi_name': req.params.raagi_name}, function(err, recordingsObj) {
-        if(err){
-            res.send(err);
-        }else{
-            let recordings = [];
-            for(let recording of recordingsObj.recordings){
-                recordings.push({
-                    recording_title: recording.recording_title,
-                    recording_url: recording.recording_url,
-                    date_added: recording.date_added
-                });
-            }
-            if(!recordings){
-                res.send("No recordings");
-            }else{
-                res.send(JSON.stringify(recordings));
-            }
-        }
+    let client = initialize_client();
+    client.connect();
+    let query = {
+        text: "select distinct rrs.recording_title, recording.url as recording_url, recording.date_added from recording join raagi_recording_shabad as rrs " +
+        "on rrs.recording_title=recording.title where raagi_name=$1 order by recording_title;",
+        values: [req.params.raagi_name]
+    };
+    client.query(query, (err, sqlResponse) => {
+        res.send(sqlResponse.rows);
+        client.end();
     });
 });
 
-router.get('/raagis/:raagi_name/shabads', (req, res) =>{
-    Raagi.findOne({'raagi_name': req.params.raagi_name}, function(err, raagiObj) {
-        if(err){
-            res.send(err);
-        }else{
-            let shabadsArr = [];
-            async.each(raagiObj.recordings, function(recording, recordingCallback){
-                async.each(recording.shabads, function(shabad,shabadCallback){
-                    Shabad.findOne({"sathaayi_id": shabad.sathaayi_id}, function(err, foundShabad){
-                        if(err){
-                            res.json(err);
-                        }else {
-                            if(foundShabad !== null){
-                                shabadsArr.push({
-                                    "shabad_english_title": foundShabad.shabad_english_title,
-                                    "sathaayi_id": shabad.sathaayi_id,
-                                    "starting_id": foundShabad.starting_id,
-                                    "ending_id": foundShabad.ending_id,
-                                    "raagi_name": req.params.raagi_name,
-                                    "shabad_length": diff(shabad.shabad_starting_time, shabad.shabad_ending_time),
-                                    "shabad_url": "https://s3.amazonaws.com/vismaadbani/vismaaddev/Raagis/" +
-                                    req.params.raagi_name + "/" + foundShabad.shabad_english_title + ".mp3"
-
-                                });
-                            }
-
-                        }
-                        shabadCallback();
-                    });
-                }, function(err){
-                    recordingCallback();
-                });
-            }, function(err){
-                res.json(shabadsArr.sort(compareByShabadName));
-            });
-        }
+// NOTE: If the length is greater than 59 minutes, then to_char() needs to have HH12:MI:SS
+router.get('/raagis/:raagi_name/shabads', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    let query = {
+        text: "select rrs.id, rrs.shabad_sathaayi_title as shabad_english_title, rrs.recording_title, shabad_info.sathaayi_id, " +
+        "shabad_info.starting_id, shabad_info.ending_id, to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.checked "+
+        "from raagi_recording_shabad as rrs join shabad on rrs.shabad_sathaayi_title = shabad.sathaayi_title join shabad_info on shabad.sathaayi_id = shabad_info.sathaayi_id "+
+        "where rrs.raagi_name=$1 order by shabad_sathaayi_title",
+        values: [req.params.raagi_name]
+    };
+    client.query(query, (err, sqlResponse) => {
+        res.send(sqlResponse.rows);
+        client.end();
     });
 });
 
 router.get('/raagis/:raagi_name/recordings/:recording_title/shabads', (req, res) => {
-    let raagi_name = req.params.raagi_name;
-    let recording_title = req.params.recording_title;
-    let recordingObj = {};
-
-    Raagi.findOne({"raagi_name": raagi_name}, function(err, foundRaagi){
-       for(let recording of foundRaagi.recordings){
-           if(recording.recording_title === recording_title){
-               recordingObj = recording;
-           }
-       }
-       let shabadsArr = [];
-       async.each(recordingObj.shabads, function(shabad, shabadCallback){
-           Shabad.findOne({"sathaayi_id": shabad.sathaayi_id}, function(err, foundShabad){
-               if(err){
-                   res.json(err);
-               }else {
-                   if(foundShabad !== null){
-                       shabadsArr.push({
-                           "shabad_english_title": foundShabad.shabad_english_title,
-                           "sathaayi_id": shabad.sathaayi_id,
-                           "starting_id": foundShabad.starting_id,
-                           "ending_id": foundShabad.ending_id,
-                           "shabad_checked": foundShabad.shabad_checked,
-                           "shabad_starting_time": shabad.shabad_starting_time,
-                           "shabad_ending_time": shabad.shabad_ending_time,
-                           "shabad_length": diff(shabad.shabad_starting_time, shabad.shabad_ending_time),
-                       });
-                   }
-               }
-               shabadCallback();
-           });
-       }, function(){
-          res.json(shabadsArr.sort(compareByShabadName));
-       });
+    let client = initialize_client();
+    client.connect();
+    let query = {
+        text: "select rrs.shabad_sathaayi_title as shabad_english_title, rrs.recording_title, shabad_info.sathaayi_id, " +
+        "shabad_info.starting_id, rrs.starting_time as shabad_starting_time, rrs.ending_time as shabad_ending_time, shabad_info.ending_id, to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.checked "+
+        "from raagi_recording_shabad as rrs join shabad on rrs.shabad_sathaayi_title = shabad.sathaayi_title join shabad_info on shabad.sathaayi_id = shabad_info.sathaayi_id "+
+        "where rrs.raagi_name=$1 and rrs.recording_title=$2 order by shabad_sathaayi_title",
+        values: [req.params.raagi_name, req.params.recording_title]
+    };
+    client.query(query, (err, sqlResponse) => {
+        res.send(sqlResponse.rows);
+        client.end();
     });
+});
 
+router.get('/recordings/:recording_title/shabads', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    let query = {
+        text: "select shabad_sathaayi_title from raagi_recording_shabad where recording_title=$1 order by shabad_sathaayi_title",
+        values: [req.params.recording_title]
+    };
+    client.query(query, (err, sqlResponse) => {
+        let shabads = [];
+        for(let row of sqlResponse.rows){
+            shabads.push(row.shabad_sathaayi_title);
+        }
+        res.send(shabads);
+        client.end();
+    });
 });
 
 router.get('/shabads/:sathaayi_id/raagis', (req, res) => {
-    let sathaayi_id = req.params.sathaayi_id;
-    let raagis_arr = [];
-
-
-    Raagi.find({"recordings.shabads": {"$elemMatch": {"sathaayi_id": sathaayi_id}}}, {raagi_name: 1, _id: 0}, function(err, raagis){
-        let raagis_arr = [];
-        for(let raagi of raagis){
-            raagis_arr.push(raagi.raagi_name);
+    let client = initialize_client();
+    client.connect();
+    let query = {
+        text: "select rrs.raagi_name from shabad join raagi_recording_shabad as rrs on shabad.sathaayi_title=rrs.shabad_sathaayi_title " +
+        "where sathaayi_id=$1",
+        values: [req.params.sathaayi_id]
+    };
+    client.query(query, (err, sqlResponse) => {
+        let raagi_names = [];
+        for(let row of sqlResponse.rows){
+            raagi_names.push(row.raagi_name);
         }
-        res.json(raagis_arr);
-      // for(let raagi of raagis){
-      //     for(let recording of raagi.recordings){
-      //         for(let shabad of recording.shabads){
-      //             console.log(shabad.sathaayi_id + " " + sathaayi_id);
-      //             if(shabad.sathaayi_id == sathaayi_id){
-      //
-      //                 let obj = {
-      //                     raagi_name: raagi.raagi_name,
-      //                     recording_title: recording.recording_title
-      //                 };
-      //                 raagis_arr.push(obj);
-      //                 break;
-      //             }
-      //         }
-      //     }
-      // }
-
+        res.send(raagi_names);
+        client.end();
     });
 });
 
-router.post('/addRaagi', (req, res) =>{
-    let raagi = new Raagi();
+// NOTE - addRaagi and addRecording is now one POST url.
+router.post('/addRaagiRecording', (req, res) =>{
+    (async () => {
+        const client = await initialize_pool().connect();
 
-    Raagi.count({"raagi_name": req.body.raagi_name}, function(err, foundRaagi){
-        if(err){
-            res.json({"message": "Error finding Raagi. \n" + err});
-        }else{
-            if(foundRaagi === 0){
-                raagi.raagi_name = req.body.raagi_name;
-                raagi.raagi_image_url = "https://s3.amazonaws.com/vismaadbani/vismaaddev/Raagis Photos/" + raagi.raagi_name + ".jpg";
-                let recordingObj = {
-                    "recording_title": req.body.recordings[0].recording_title,
-                    "recording_url": req.body.recordings[0].recording_url,
-                    "shabads": []
-                };
+        try{
+            let image_url = "https://s3.amazonaws.com/vismaadbani/vismaaddev/Raagis Photos/No Raagi.jpg";
 
-                async.each(req.body.recordings[0].shabads, function(shabad, shabadCallback){
+            await client.query('BEGIN');
+            await client.query("INSERT INTO RAAGI (NAME, IMAGE_URL) VALUES ($1, $2) ON CONFLICT (NAME) DO NOTHING", [req.body.raagi_name, image_url]);
+            await client.query("INSERT INTO RECORDING (TITLE, URL) VALUES ($1, $2)", [req.body.recordings[0].recording_title, req.body.recordings[0].recording_url]);
 
-                    let shabadObj = {
-                        "sathaayi_id": shabad.sathaayi_id,
-                        "shabad_starting_time": shabad.shabad_starting_time,
-                        "shabad_ending_time": shabad.shabad_ending_time
-                    };
-                    recordingObj.shabads.push(shabadObj);
-                    add_shabad(shabad, shabadCallback);
+            for(let shabad of req.body.recordings[0].shabads){
+                let shabad_length = diff(shabad.shabad_starting_time, shabad.shabad_ending_time);
+                await client.query("INSERT INTO SHABAD_INFO (SATHAAYI_ID, STARTING_ID, ENDING_ID, CHECKED) VALUES ($1, $2, $3, $4) ON CONFLICT (SATHAAYI_ID) DO NOTHING",
+                    [shabad.sathaayi_id, shabad.starting_id, shabad.ending_id, false]);
 
-                }, function(){
-                    raagi.recordings = [recordingObj];
-                    raagi.save(function(err) {
-                        if(err){
-                            res.json({"message": "Error adding Raagi. \n" + err});
-                        }else{
-                            res.json({"message": "Raagi Added Successfully!"});
-                        }
-                    });
-                });
-            }else if(foundRaagi === 1){
-                res.json({"message": "Raagi already exists."});
+                await client.query("INSERT INTO SHABAD (SATHAAYI_TITLE, SATHAAYI_ID) VALUES ($1, $2) ON CONFLICT (SATHAAYI_TITLE) DO NOTHING",
+                    [shabad.shabad_english_title, shabad.sathaayi_id]);
+
+                await client.query("INSERT INTO RAAGI_RECORDING_SHABAD (RAAGI_NAME, RECORDING_TITLE, SHABAD_SATHAAYI_TITLE, STARTING_TIME, ENDING_TIME," +
+                    " LENGTH) VALUES ($1, $2, $3, $4, $5, $6)",
+                    [req.body.raagi_name, req.body.recordings[0].recording_title, shabad.shabad_english_title, shabad.shabad_starting_time, shabad.shabad_ending_time, shabad_length]);
             }
+            await client.query('COMMIT');
+            res.send("Success");
+        }catch(e){
+            await client.query('ROLLBACK');
+            throw e
+        }finally{
+            client.release();
         }
-    });
+    })().catch(e => console.error(e.stack));
 });
 
 router.post('/uploadRecording', (req, res) => {
@@ -377,6 +261,7 @@ router.post('/uploadRecording', (req, res) => {
     });
 });
 
+// Check if new shabad's checked field is set to true when new shabad is uploaded
 router.post('/uploadShabad', (req, res) => {
     let shabad_english_title = req.body.shabad.shabad_english_title;
     let shabad_starting_time = req.body.shabad.shabad_starting_time;
@@ -414,109 +299,96 @@ router.post('/uploadShabad', (req, res) => {
         + "-af \"afade=t=in:ss=0:d=4,afade=t=out:st=" + (end_seconds - 4) + ":d=4\" " + shabad_english_title.replace(/ /g, "\\ ") + ".mp3";
     let execute_fade_cmd = child_process.execSync(fade_cmd, { stdio: ['pipe', 'pipe', 'ignore']});
 
-
-
-    Shabad.update({"starting_id": starting_id, "ending_id": ending_id}, {$set: {"shabad_checked": true}}, {multi: true}, function(err, numAffected){
-        console.log(numAffected);
-        upload_shabad(shabad_english_title, raagi_name, res)
-    });
-
-
-});
-
-router.put('/addRecording', (req, res) => {
-    Raagi.count({"raagi_name": req.body.raagi_name}, function(err, foundRaagi){
-        if(err){
-            res.json({"message": "Error finding Raagi. \n" + err});
-        }else{
-            if(foundRaagi === 0){
-                res.json({"message": "Raagi not found. \n"});
-            }else if(foundRaagi === 1){
-                let recordingObj = {
-                    "recording_title": req.body.recordings[0].recording_title,
-                    "recording_url": req.body.recordings[0].recording_url,
-                    "shabads": []
-                };
-
-                async.each(req.body.recordings[0].shabads, function(shabad, shabadCallback){
-                    let shabadObj = {
-                        "sathaayi_id": shabad.sathaayi_id,
-                        "shabad_starting_time": shabad.shabad_starting_time,
-                        "shabad_ending_time": shabad.shabad_ending_time
-                    };
-                    recordingObj.shabads.push(shabadObj);
-                    add_shabad(shabad, shabadCallback);
-                }, function(){
-                    Raagi.update({'raagi_name': req.body.raagi_name}, {"$push": {"recordings": recordingObj}}, function (err, numAffected) {
-                        if (err) {
-                            res.json({"message": "Error updating the Raagi. \n" +err})
-                        } else {
-                            res.json({"message": "Successfully Added. \n" + numAffected});
-                        }
-                    });
-                });
-            }
-        }
+    let client = initialize_client();
+    client.connect();
+    let query = {
+        text: "update shabad_info set checked=false where starting_id=$1 and ending_id=$2",
+        values: [starting_id, ending_id]
+    };
+    client.query(query, (err, sqlResponse) => {
+        upload_shabad(shabad_english_title, raagi_name, res);
+        client.end();
     });
 });
 
 router.put('/changeShabadTitle', (req, res) => {
-    let sathaayi_id = req.body.sathaayi_id;
-    let shabad_english_title = req.body.shabad_english_title;
-
-    Shabad.update({"sathaayi_id": sathaayi_id}, {$set: {"shabad_english_title": shabad_english_title}}, function(err, numAffected){
-        if(err) throw err;
-
-        res.json("Shabad Title Changed");
+    let client = initialize_client();
+    client.connect();
+    client.query('update shabad set sathaayi_title=$1 where sathaayi_title=$2', [req.body.new_shabad_english_title,
+        req.body.old_shabad_english_title], (err, sqlResponse) => {
+        res.send("Success");
+        client.end();
     });
 });
 
 router.put('/changeStartingID', (req, res) => {
-    let original_starting_id = req.body.original_starting_id;
-    let new_starting_id = req.body.new_starting_id;
-
-    Shabad.update({"starting_id": original_starting_id}, {$set: {"starting_id": new_starting_id}}, {multi: true}, function(err, numAffected){
-        if(err) throw err;
-        console.log(numAffected);
-        res.json("Starting ID Changed");
+    let client = initialize_client();
+    client.connect();
+    client.query('update shabad_info set starting_id=$1 where starting_id=$2', [req.body.new_starting_id,
+        req.body.original_starting_id], (err, sqlResponse) => {
+        res.send("Success");
+        client.end();
     });
 });
 
 router.put('/changeEndingID', (req, res) => {
-    let original_ending_id = req.body.original_ending_id;
-    let new_ending_id = req.body.new_ending_id;
-
-    Shabad.update({"ending_id": original_ending_id}, {$set: {"ending_id": new_ending_id}}, {multi: true}, function(err, numAffected){
-        if(err) throw err;
-        console.log(numAffected);
-        res.json("Ending ID Changed");
+    let client = initialize_client();
+    client.connect();
+    client.query('update shabad_info set ending_id=$1 where ending_id=$2', [req.body.new_ending_id,
+        req.body.original_ending_id], (err, sqlResponse) => {
+        res.send("Success");
+        client.end();
     });
 });
 
+//TODO - Test to see if this method adds shabads to an existing recording. The code is somewhat similar to addRaagiRecording
 router.put('/raagis/:raagi_name/recordings/:recording_title/addShabads', (req, res) => {
+    (async () => {
+        const client = await initialize_pool().connect();
+        try{
+            await client.query('BEGIN');
+            for(let shabad of req.body.shabads){
+                let shabad_length = diff(shabad.shabad_starting_time, shabad.shabad_ending_time);
+                await client.query("INSERT INTO SHABAD_INFO (SATHAAYI_ID, STARTING_ID, ENDING_ID, CHECKED) VALUES ($1, $2, $3, $4) ON CONFLICT (SATHAAYI_ID) DO NOTHING",
+                    [shabad.sathaayi_id, shabad.starting_id, shabad.ending_id, false]);
 
-    let shabadsArr = [];
+                await client.query("INSERT INTO SHABAD (SATHAAYI_TITLE, SATHAAYI_ID) VALUES ($1, $2) ON CONFLICT (SATHAAYI_TITLE) DO NOTHING",
+                    [shabad.shabad_english_title, shabad.sathaayi_id]);
 
-    async.each(req.body.shabads, function(shabad, shabadCallback){
-        let shabadObj = {
-            "sathaayi_id": shabad.sathaayi_id,
-            "shabad_starting_time": shabad.shabad_starting_time,
-            "shabad_ending_time": shabad.shabad_ending_time
-        };
-        shabadsArr.push(shabadObj);
-        add_shabad(shabad, shabadCallback);
-    }, function(){
-        Raagi.update({'raagi_name': req.params.raagi_name,
-                "recordings.recording_title": req.params.recording_title},
-            {"$push": {"recordings.$.shabads": { $each:shabadsArr}}}, function(err, numAffected) {
-                if (err) {
-                    res.json({"message": "Error updating the Raagi. \n" +err})
-                } else {
-                    res.json(numAffected);
-                }
-            });
+                await client.query("INSERT INTO RAAGI_RECORDING_SHABAD (RAAGI_NAME, RECORDING_TITLE, SHABAD_SATHAAYI_TITLE, STARTING_TIME, ENDING_TIME," +
+                    " LENGTH) VALUES ($1, $2, $3, $4, $5, $6)",
+                    [req.params.raagi_name, req.params.recording_title, shabad.shabad_english_title, shabad.shabad_starting_time, shabad.shabad_ending_time, shabad_length]);
+            }
+            await client.query('COMMIT');
+            res.send("Success!");
+        }catch(e){
+            await client.query('ROLLBACK');
+            throw e
+        }finally{
+            client.release();
+        }
+    })().catch(e => console.error(e.stack));
+});
+
+// TODO - Work on Adding shabad Themes
+/*
+router.get('/shabads/:sathaayi_id/themes', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    let query = {
+        text: "select * from shabad_info_theme where sathaayi_id=$1",
+        values: [req.params.sathaayi_id]
+    };
+    client.query(query, (err, sqlResponse) => {
+        let shabad_themes = [];
+        for(let row of sqlResponse.rows){
+            shabad_themes.push(row.theme_name);
+        }
+        res.send(shabad_themes);
+        client.end();
     });
 });
+
 
 router.put('/addShabadThemes/:shabad_english_title', (req, res) => {
     let shabad_english_title = req.params.shabad_english_title;
@@ -530,102 +402,50 @@ router.put('/addShabadThemes/:shabad_english_title', (req, res) => {
        }
     });
 });
+*/
 
-function add_shabad(shabad, shabadCallback){
-    let newShabad = new Shabad();
-    newShabad.shabad_english_title = shabad.shabad_english_title;
-    newShabad.sathaayi_id = shabad.sathaayi_id;
-    newShabad.starting_id = shabad.starting_id;
-    newShabad.ending_id = shabad.ending_id;
-
-
-    console.log(newShabad);
-    console.log("Adding a shabad");
-
-    Shabad.count({"sathaayi_id": newShabad.sathaayi_id}, function(err, foundShabad){
-        if(err){
-            console.log(err);
-        }else{
-            if(foundShabad === 0){
-                // If shabad not found, then save the new shabad.
-                newShabad.save(function(err){
-                    if(err){
-                        console.log(err);
-                    }else{
-                        console.log("New Shabad Added Successfully.");
-                    }
-                });
-            }else if(foundShabad === 1){
-            }
-        }
-        shabadCallback();
-    });
+function initialize_client(){
+    return new Client(config.database);
 }
 
-function upload_shabad(shabad_english_title, raagi_name, res){
-    let s3 = new AWS.S3();
-    fs.readFile(shabad_english_title + ".mp3", function(err, data){
-       if(err){
-           console.log(err);
-       } else{
-           let params = {
-               Bucket: "vismaadbani/vismaaddev/Raagis/" + raagi_name,
-               Key: shabad_english_title + ".mp3",
-               Body: data,
-               ACL:'public-read',
-               ContentType: "audio/mpeg"
-           };
-           s3.putObject(params, function(err, data){
-               if(err) throw err;
-               fs.unlink(shabad_english_title + ".mp3");
-               fs.unlink(shabad_english_title + " temp.mp3");
-               res.json("Shabad uploaded!")
-           });
-       }
-    });
-}
-
-function compare(a, b){
-    if (a.raagi_name < b.raagi_name)
-        return -1;
-    if (a.raagi_name > b.raagi_name)
-        return 1;
-    return 0;
+function initialize_pool(){
+    return new Pool(config.database);
 }
 
 function diff(start, end) {
     start = start.split(":");
     end = end.split(":");
-    var startDate = new Date(0, 0, 0, start[0], start[1], 0);
-    var endDate = new Date(0, 0, 0, end[0], end[1], 0);
-    var diff = endDate.getTime() - startDate.getTime();
-    var hours = Math.floor(diff / 1000 / 60 / 60);
+    let startDate = new Date(0, 0, 0, start[0], start[1], 0);
+    let endDate = new Date(0, 0, 0, end[0], end[1], 0);
+    let diff = endDate.getTime() - startDate.getTime();
+    let hours = Math.floor(diff / 1000 / 60 / 60);
     diff -= hours * 1000 * 60 * 60;
-    var minutes = Math.floor(diff / 1000 / 60);
+    let minutes = Math.floor(diff / 1000 / 60);
 
-    return (hours < 9 ? "0" : "") + hours + ":" + (minutes < 9 ? "0" : "") + minutes;
+    return "0:" + (hours <= 9 ? "0" : "") + hours + ":" + (minutes <= 9 ? "0" : "") + minutes;
 }
 
-function addInMinutes(shabadTimeArr){
-    let totalMinutes = 0, totalSeconds = 0;
-    for(let i = 0; i < shabadTimeArr.length; i++){
-        let mmss = shabadTimeArr[i].split(":");
-        totalMinutes += parseInt(mmss[0]);
-        totalSeconds += parseInt(mmss[1]);
-    }
-
-    //console.log(totalMinutes + " " + totalSeconds);
-    totalMinutes += Math.ceil(totalSeconds/60);
-    return totalMinutes;
-
-}
-
-function compareByShabadName(a, b){
-    if (a.shabad_english_title < b.shabad_english_title)
-        return -1;
-    if (a.shabad_english_title > b.shabad_english_title)
-        return 1;
-    return 0;
+function upload_shabad(shabad_english_title, raagi_name, res){
+    let s3 = new AWS.S3();
+    fs.readFile(shabad_english_title + ".mp3", function(err, data){
+        if(err){
+            console.log(err);
+        } else{
+            let params = {
+                Bucket: "vismaadbani/vismaaddev/Raagis/" + raagi_name,
+                Key: shabad_english_title + ".mp3",
+                Body: data,
+                ACL:'public-read',
+                ContentType: "audio/mpeg"
+            };
+            s3.putObject(params, function(err, data){
+                if(err) throw err;
+                fs.unlink(shabad_english_title + ".mp3");
+                fs.unlink(shabad_english_title + " temp.mp3");
+                res.json("Shabad uploaded!")
+            });
+        }
+    });
 }
 
 module.exports = router;

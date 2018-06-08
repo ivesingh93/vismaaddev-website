@@ -50,8 +50,11 @@ export class RecordingFormComponent implements OnInit {
   }
 
   ngOnInit(){
-    this.getRaagis();
+    this.getRaagiNames();
+    this.raagiNamesList.unshift("Add New Raagi");
+    this.getRecordingURLs();
     this.getShabads();
+    this.shabadsList.unshift("Add New Shabad");
     this.recordingForm = new FormGroup({
       raagiName: new FormControl(null),
       newRaagiName: new FormControl(null, Validators.required),
@@ -65,9 +68,15 @@ export class RecordingFormComponent implements OnInit {
   }
 
   // REST call to GET Raagis and Recordings
-  getRaagis(){
-    this.restService.getRaagis()
-      .then(data => this.extractRaagiData(data))
+  getRaagiNames(){
+    this.restService.getRaagiNames()
+      .then(data => this.raagiNamesList = data)
+      .catch(error => console.log(error));
+  }
+
+  getRecordingURLs(){
+    this.restService.getRecordingURLs()
+      .then(data => this.recordingURLList = data)
       .catch(error => console.log(error));
   }
 
@@ -189,11 +198,11 @@ export class RecordingFormComponent implements OnInit {
       }else{
 
         if(newRaagi){
-          this.restService.addRaagi(raagiObj)
+          this.restService.addRaagiRecording(raagiObj)
             .then(data => this.toastrService.success('', 'Raagi Added Successfully!', this.config))
             .catch(error => this.toastrService.error('', 'Oopss! An error has occurred. Please recheck your submission', this.config));
         }else{
-          this.restService.addRecording(raagiObj)
+          this.restService.addRaagiRecording(raagiObj)
             .then(data => this.toastrService.success('', 'Recording Added Successfully!', this.config))
             .catch(error => this.toastrService.error('', 'Oopss! An error has occurred. Please recheck your submission', this.config));
         }
@@ -204,8 +213,8 @@ export class RecordingFormComponent implements OnInit {
   }
 
   onRecordingURLChange(recordingURL){
-    for(let recTitle of this.recordingURLList){
-      if(recordingURL === recTitle){
+    for(let recURL of this.recordingURLList){
+      if(recordingURL === recURL){
         this.recordingURLAlert = "Recording URL already exists. Please enter a new recording.";
         break;
       }else{
@@ -483,33 +492,8 @@ export class RecordingFormComponent implements OnInit {
   private extractShabads(data){
     for(let shabadObj of data){
       this.existedShabads.push(shabadObj);
+      this.shabadsList.push(shabadObj.shabad_english_title);
     }
-  }
-
-  // Prepare list of existing shabads and raagis
-  private extractRaagiData(data){
-
-    for(let raagi of data){
-      // Add raagis
-      this.raagiNamesList.push(raagi.raagi_name);
-
-      // Add recordingTitles and recordingURLs
-      for(let recording of raagi.recordings){
-        this.recordingURLList.push(recording.recording_url);
-
-        for(let shabad of recording.shabads){
-          if(!this.shabadsList.includes(shabad.shabad_english_title))
-            this.shabadsList.push(shabad.shabad_english_title);
-        }
-      }
-    }
-
-    this.shabadsList.sort();
-    this.raagiNamesList.sort();
-
-    this.raagiNamesList.unshift("Add New Raagi");
-    this.shabadsList.unshift("Add New Shabad");
-
   }
 
   // Add a new control

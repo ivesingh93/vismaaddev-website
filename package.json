@@ -19,6 +19,7 @@
     "nodemon": "^1.14.11",
     "passport": "*",
     "passport-jwt": "*",
+    "pg": "^7.4.3",
     "request": "^2.83.0",
     "sqlite3": "^3.1.13",
     "trimp3": "^0.1.2",

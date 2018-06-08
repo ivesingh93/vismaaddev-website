@@ -19,11 +19,6 @@ export class ShabadsThemesComponent implements OnInit {
   selected_shabad_ang = 0;
 
   private selected_themes = [];
-  private themes:Array<string> = ["Bani & Satsangat", "Maaya & Moh", "Ustath & Akath Katha", "Hauumain & Vicchodda",
-    "Naam Rass & Simran", "Sharan & Bhaanna", "Benti & Ardaas", "Milaap & Anand", "Sukh & Sehaj", "Kirtan & Har Jass",
-    "Sevak & Seva", "Bhagat & Bhagti", "Mann & Jindh", "Janam Maran & Maanas Janam", "Kirpa & Mehar", "Guru Ustat & Vaara",
-    "Viraag & Milaap", "Manmukh & Gurmukh", "Gursikhi & Nimarta", "Baksh Laye & Sharan", "Ninda & Saakat Sang", "Payaas & Darshan"
-  ];
 
   config: ToastConfig = {
     positionClass: 'toast-bottom-full-width',
@@ -37,9 +32,10 @@ export class ShabadsThemesComponent implements OnInit {
               private toastrService: ToastrService) { }
 
   ngOnInit() {
-    this.restService.getShabadsWithNoThemes()
+    this.restService.getShabads()
       .then(data => this.extractShabadsObj(data))
       .catch(error => console.log(error));
+
   }
 
 
@@ -61,6 +57,9 @@ export class ShabadsThemesComponent implements OnInit {
 
       })
       .catch(error => console.log(error));
+
+    // this.restService.getShabadThemes(this.selected_shabad_obj['sathaayi_id'])
+    //   .then(data => )
   }
 
   public refreshValue(value:any):void {
@@ -69,6 +68,7 @@ export class ShabadsThemesComponent implements OnInit {
   }
 
   public submitThemes(){
+    console.log(this.selected_themes);
     let themes = [];
     for(let i = 0; i < this.selected_themes.length; i++){
       themes.push(this.selected_themes[i]['text']);

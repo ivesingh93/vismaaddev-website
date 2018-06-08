@@ -2,12 +2,24 @@
   <h1>Recording List</h1>
 
   <mat-tab-group style="height: 1000px;">
-    <mat-tab label="Raagis" >
-      <tree-root [nodes]="raagisRecordingsShabads" *ngIf="raagisRecordingsShabads.length" #treeComponent></tree-root>
-    </mat-tab>
 
-    <mat-tab label="Recent Recordings">
-      <tree-root [nodes]="raagisRecordings" *ngIf="raagisRecordings.length" #treeComponent></tree-root>
+    <mat-tab label="Recent Recordings"  layout-fill>
+      <br>
+      <label>Recording Title</label>
+      <br>
+      <ng-select
+        *ngIf="recentRecordings.length"
+        (selected)="onRecordingTitleSelected($event.text)"
+        [items]="recentRecordings">
+      </ng-select>
+      <br>
+      <div *ngIf="shabadList.length > 0; else spaces">
+        <div *ngFor="let shabad of shabadList; let i = index">
+          <span>{{i+1}}: {{shabad}}</span>
+        </div>
+      </div>
+      <br><br><br><br><br><br>
+      <ng-template #spaces><br><br><br><br><br><br><br><br><br><br><br></ng-template>
     </mat-tab>
 
     <mat-tab label="Shabads" layout-fill>
@@ -15,9 +27,9 @@
       <label>Shabad Title</label>
       <br>
       <ng-select
-        *ngIf="shabadList.length"
+        *ngIf="allShabadList.length"
         (selected)="onShabadTitleSelected($event.text)"
-        [items]="shabadList">
+        [items]="allShabadList">
       </ng-select>
       <br>
       <div *ngIf="panktiList.length > 0; else spaces">
@@ -25,6 +37,7 @@
           <span style='font-family: GurbaniLipi; font-size: 19px'>{{pankti}}</span>
         </div>
       </div>
+      <br><br><br><br><br><br>
       <ng-template #spaces><br><br><br><br><br><br><br><br><br><br><br></ng-template>
     </mat-tab>
 

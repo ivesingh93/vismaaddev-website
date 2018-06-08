@@ -134,7 +134,7 @@ export class UploadShabadsComponent implements OnInit {
   }
 
   changeShabadTitle(){
-    this.restService.changeShabadTitle(this.selected_shabad_obj['sathaayi_id'], this.selected_shabad_english_title)
+    this.restService.changeShabadTitle(this.selected_shabad_obj['shabad_english_title'], this.selected_shabad_english_title)
       .then(data => this.toastrService.success('', data.toString(), this.config))
       .catch(error => console.log(error));
   }

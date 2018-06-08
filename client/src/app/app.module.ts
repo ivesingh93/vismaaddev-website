@@ -33,7 +33,7 @@ import { RaagiShabadsComponent } from './rest/raagi-shabads/raagi-shabads.compon
 const appRoutes: Routes = [
   {path: 'recordings', component: RecordingsComponent},
   {path: 'shabads', component: ShabadsComponent},
-  {path: 'shabads_themes', component: ShabadsThemesComponent},
+  // {path: 'shabads_themes', component: ShabadsThemesComponent},
   {path: 'raagi_shabads', component: RaagiShabadsComponent}
 ];
 

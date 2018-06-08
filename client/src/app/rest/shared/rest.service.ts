@@ -5,11 +5,10 @@ import 'rxjs/add/operator/toPromise';
 @Injectable()
 export class RestService{
   //http://localhost:3000
-  private LOCALHOST = "";
+  private LOCALHOST = "http://localhost:3000";
 
   private RAAGIS_URL = this.LOCALHOST +  "/api/raagiRoutes/raagis";
-  private ADD_RAAGI_URL = this.LOCALHOST +  "/api/raagiRoutes/addRaagi";
-  private ADD_RECORDING_URL = this.LOCALHOST +  "/api/raagiRoutes/addRecording";
+  private ADD_RAAGI_RECORDING_URL = this.LOCALHOST +  "/api/raagiRoutes/addRaagiRecording";
   private GET_LINES_URL = this.LOCALHOST +  "/api/sggsRoutes/linesWithInitials/";
   private GET_RANGE_LINES = this.LOCALHOST +  "/api/sggsRoutes/linesFrom/";
   private GET_SHABAD_LINES = this.LOCALHOST +  "/api/sggsRoutes/shabadLines/"
@@ -18,6 +17,7 @@ export class RestService{
   private ADD_SHABADS_BY_RECORDING = this.LOCALHOST +  "/api/raagiRoutes/raagis/";
   private GET_SHABADS_BY_RAAGI = this.LOCALHOST +  "/api/raagiRoutes/raagis/";
   private GET_RAAGI_NAMES = this.LOCALHOST + "/api/raagiRoutes/raagiNames";
+  private GET_RECORDING_URLS = this.LOCALHOST + "/api/raagiRoutes/recordingURLs";
   private GET_RAAGI_RECORDING_SHABADS = this.LOCALHOST + "/api/raagiRoutes/raagis/";
   private GET_RAAGI_RECORDINGS_INFO = this.LOCALHOST + "/api/raagiRoutes/raagis/";
   private UPLOAD_RECORDING = this.LOCALHOST + "/api/raagiRoutes/uploadRecording";
@@ -27,33 +27,17 @@ export class RestService{
   private CHANGE_ENDING_ID = this.LOCALHOST + "/api/raagiRoutes/changeEndingID";
   private GET_SHABAD_BY_SATHAAYI_ID = this.LOCALHOST + "/api/raagiRoutes/shabads/";
   private GET_SHABADS_WITH_NO_THEMES = this.LOCALHOST + "/api/raagiRoutes/shabadsWithNoThemes"
-  private ADD_SHABAD_THEMES = this.LOCALHOST + "/api/raagiRoutes/addShabadThemes/"
-
+  private ADD_SHABAD_THEMES = this.LOCALHOST + "/api/raagiRoutes/addShabadThemes/";
+  private GET_RECENT_RECORDINGS = this.LOCALHOST + "/api/raagiRoutes/recentRecordings";
+  private GET_SHABADS_RECORDING = this.LOCALHOST + "/api/raagiRoutes/recordings";
+  private GET_SHABAD_THEMES = this.LOCALHOST + "/api/raagiRoutes/shabads/";
   constructor(private http: Http){}
 
-  getRaagis(): Promise<any>{
-    return this.http.get(this.RAAGIS_URL)
-      .toPromise()
-      .then(this.extractData)
-      .catch(this.handleError);
-
-  }
-
-  addRaagi(raagi_obj){
+  addRaagiRecording(raagi_obj){
     let headers = new Headers({ 'Content-Type': 'application/json' });
     let options = new RequestOptions({ headers: headers });
 
-    return this.http.post(this.ADD_RAAGI_URL, raagi_obj, options)
-      .toPromise()
-      .then(this.extractData)
-      .catch(this.handleError);
-  }
-
-  addRecording(raagi_obj){
-    let headers = new Headers({ 'Content-Type': 'application/json' });
-    let options = new RequestOptions({ headers: headers });
-
-    return this.http.put(this.ADD_RECORDING_URL, raagi_obj, options)
+    return this.http.post(this.ADD_RAAGI_RECORDING_URL, raagi_obj, options)
       .toPromise()
       .then(this.extractData)
       .catch(this.handleError);
@@ -82,14 +66,6 @@ export class RestService{
 
   getShabads(): Promise<any>{
     return this.http.get(this.SHABADS_URL)
-      .toPromise()
-      .then(this.extractData)
-      .catch(this.handleError);
-
-  }
-
-  getShabadsWithNoThemes(): Promise<any>{
-    return this.http.get(this.GET_SHABADS_WITH_NO_THEMES)
       .toPromise()
       .then(this.extractData)
       .catch(this.handleError);
@@ -188,6 +164,36 @@ export class RestService{
 
   }
 
+  getRecordingURLs(): Promise<any>{
+    return this.http.get(this.GET_RECORDING_URLS)
+      .toPromise()
+      .then(this.extractData)
+      .catch(this.handleError);
+
+  }
+
+  getRecentRecordings(): Promise<any>{
+    return this.http.get(this.GET_RECENT_RECORDINGS)
+      .toPromise()
+      .then(this.extractData)
+      .catch(this.handleError);
+
+  }
+
+  getShabadThemes(sathaayi_id: number): Promise<any>{
+    return this.http.get(this.GET_SHABAD_THEMES + "/" + sathaayi_id + "/themes")
+      .toPromise()
+      .then(this.extractData)
+      .catch(this.handleError);
+  }
+
+  getShabadsByRecording(recording_title: string): Promise<any>{
+    return this.http.get(this.GET_SHABADS_RECORDING + "/" + recording_title + "/shabads")
+      .toPromise()
+      .then(this.extractData)
+      .catch(this.handleError);
+  }
+
   getRaagiRecordingShabads(raagi_name: string, recording_title: string): Promise<any>{
     return this.http.get(this.GET_RAAGI_RECORDING_SHABADS + raagi_name + "/recordings/" + recording_title + "/shabads")
       .toPromise()
@@ -195,13 +201,13 @@ export class RestService{
       .catch(this.handleError);
   }
 
-  changeShabadTitle(sathaayi_id, shabad_english_title){
+  changeShabadTitle(old_shabad_english_title, new_shabad_english_title){
     let headers = new Headers({ 'Content-Type': 'application/json' });
     let options = new RequestOptions({ headers: headers });
 
     let obj = {
-      sathaayi_id: sathaayi_id,
-      shabad_english_title: shabad_english_title
+      old_shabad_english_title: old_shabad_english_title,
+      new_shabad_english_title: new_shabad_english_title
     };
 
     return this.http.put(this.CHANGE_SHABAD_TITLE, obj, options)
