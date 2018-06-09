@@ -86,7 +86,7 @@ router.post('/authenticate', (req, res) => {
 router.post('/createPlaylist', (req, res) => {
     let client = initialize_client();
     client.connect();
-    client.query("insert into playlist (playlist_name, username) values ($1, $2)", [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
+    client.query("insert into playlist (name, username) values ($1, $2)", [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
         if(err){
             console.log(err);
             res.json('Failure');
@@ -100,25 +100,7 @@ router.post('/createPlaylist', (req, res) => {
 router.post('/deletePlaylist', (req, res) => {
     let client = initialize_client();
     client.connect();
-    client.query("delete from playlist where playlist_name=$1 and username=$2", [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
-        if(err){
-            console.log(err);
-            res.json('Failure');
-        }else{
-            res.json('Success');
-        }
-        client.end();
-    });
-});
-
-router.post('/addShabad', (req, res) => {
-    let client = initialize_client();
-    client.connect();
-    let query = {
-        text: "update playlist set raagi_recording_shabad_id=$1 where playlist_name=$2 and username=$3",
-        values: [req.body.id, req.body.playlist_name, req.body.username]
-    };
-    client.query(query, (err, sqlResponse) => {
+    client.query("delete from playlist where name=$1 and username=$2", [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
         if(err){
             console.log(err);
             res.json('Failure');
@@ -135,8 +117,8 @@ router.post('/addShabads', (req, res) => {
         try{
             await client.query('BEGIN');
             for(let shabad of req.body){
-                await client.query("update playlist set raagi_recording_shabad_id=$1 where playlist_name=$2 and username=$3",
-                    [shabad.id, shabad.playlist_name, shabad.username]);
+                await client.query("insert into playlist_shabad (playlist_id, raagi_recording_shabad_id) values ((select id from playlist where username=$1 and name=$2), $3)",
+                    [shabad.username, shabad.playlist_name, shabad.id]);
             }
             await client.query('COMMIT');
             res.json("Success!");
@@ -150,32 +132,14 @@ router.post('/addShabads', (req, res) => {
 
 });
 
-router.post('/removeShabad', (req, res) => {
-    let client = initialize_client();
-    client.connect();
-    let query = {
-        text: "delete from playlist where username=$1 and playlist_name=$2 and raagi_recording_shabad_id=$3",
-        values: [req.body.username, req.body.playlist_name, req.body.id]
-    };
-    client.query(query, (err, sqlResponse) => {
-        if(err){
-            console.log(err);
-            res.json('Failure');
-        }else{
-            res.json('Success');
-        }
-        client.end();
-    });
-});
-
 router.post('/removeShabads', (req, res) => {
     (async () => {
         const client = await initialize_pool().connect();
         try{
             await client.query('BEGIN');
             for(let shabad of req.body){
-                await client.query("delete from playlist where username=$1 and playlist_name=$2 and raagi_recording_shabad_id=$3",
-                    [shabad.username, shabad.playlist_name, shabad.id]);
+                await client.query("delete from playlist_shabad where raagi_recording_shabad_id=$1 and playlist_id=(select id from playlist where username=$2 and name=$3)",
+                    [shabad.id, shabad.username, shabad.playlist_name]);
             }
             await client.query('COMMIT');
             res.json("Success!");
@@ -192,7 +156,7 @@ router.get('/users/:username/playlists', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "select playlist_name from playlist where username=$1",
+        text: "select name from playlist where username=$1",
         values: [ req.params.username]
     };
     client.query(query, (err, sqlResponse) => {
@@ -202,7 +166,7 @@ router.get('/users/:username/playlists', (req, res) => {
         }else{
             let playlists = [];
             for(let row of sqlResponse.rows){
-                playlists.push(row.playlist_name);
+                playlists.push(row.name);
             }
             res.send(playlists);
             console.log(sqlResponse);
@@ -215,10 +179,13 @@ router.get('/users/:username/playlists/:playlist_name', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "select rrs.id, rrs.raagi_name, rrs.shabad_sathaayi_title as shabad_english_title, to_char(rrs.length, 'MI:SS'), rrs.recording_title, shabad_info.sathaayi_id, shabad_info.starting_id, " +
-        "shabad_info.ending_id from playlist join raagi_recording_shabad as rrs on playlist.raagi_recording_shabad_id = rrs.id " +
-        "join shabad on rrs.shabad_sathaayi_title = shabad.sathaayi_title join shabad_info on shabad.sathaayi_id = shabad_info.sathaayi_id " +
-        "where username=$1 and playlist_name=$2 order by rrs.shabad_sathaayi_title",
+        text: "select rrs.id, rrs.raagi_name, rrs.recording_title, rrs.shabad_sathaayi_title as shabad_english_title, to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.sathaayi_id, shabad_info.starting_id, shabad_info.ending_id " +
+        "from playlist as p " +
+        "join playlist_shabad as ps on p.id = ps.playlist_id " +
+        "join  raagi_recording_shabad as rrs on ps.raagi_recording_shabad_id = rrs.id " +
+        "join shabad on rrs.shabad_sathaayi_title=shabad.sathaayi_title " +
+        "join shabad_info on shabad.sathaayi_id=shabad_info.sathaayi_id " +
+        "where username=$1 and name=$2 order by rrs.shabad_sathaayi_title",
         values: [ req.params.username, req.params.playlist_name]
     };
     client.query(query, (err, sqlResponse) => {
