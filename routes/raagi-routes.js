@@ -73,7 +73,7 @@ router.get('/raagi_info', (req, res) => {
 router.get('/shabads', (req, res) => {
     let client = initialize_client();
     client.connect();
-    let query = "select shabad.sathaayi_title as shabad_english_title, shabad.sathaayi_id, shabad_info.starting_id, shabad_info.ending_id, shabad_info.checked " +
+    let query = "select shabad.sathaayi_title as shabad_english_title, shabad.sathaayi_id, shabad_info.starting_id, shabad_info.ending_id, shabad_info.checked as shabad_checked " +
         "from shabad join shabad_info on shabad.sathaayi_id = shabad_info.sathaayi_id order by shabad.sathaayi_title";
     client.query(query, (err, sqlResponse) => {
         res.send(sqlResponse.rows);
@@ -92,7 +92,12 @@ router.get('/shabads/:sathaayi_id', (req, res) => {
         values: [sathaayi_id]
     };
     client.query(query, (err, sqlResponse) => {
-        res.send(sqlResponse.rows);
+        if(sqlResponse.rows.length > 0){
+            res.send(sqlResponse.rows);
+        }else{
+            res.json("Shabad not found");
+        }
+
         client.end();
     });
 });
@@ -134,7 +139,7 @@ router.get('/raagis/:raagi_name/shabads', (req, res) => {
     client.connect();
     let query = {
         text: "select rrs.id, rrs.shabad_sathaayi_title as shabad_english_title, rrs.recording_title, shabad_info.sathaayi_id, " +
-        "shabad_info.starting_id, shabad_info.ending_id, to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.checked "+
+        "shabad_info.starting_id, shabad_info.ending_id, to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.checked as shabad_checked "+
         "from raagi_recording_shabad as rrs join shabad on rrs.shabad_sathaayi_title = shabad.sathaayi_title join shabad_info on shabad.sathaayi_id = shabad_info.sathaayi_id "+
         "where rrs.raagi_name=$1 order by shabad_sathaayi_title",
         values: [req.params.raagi_name]
@@ -150,7 +155,8 @@ router.get('/raagis/:raagi_name/recordings/:recording_title/shabads', (req, res)
     client.connect();
     let query = {
         text: "select rrs.shabad_sathaayi_title as shabad_english_title, rrs.recording_title, shabad_info.sathaayi_id, " +
-        "shabad_info.starting_id, rrs.starting_time as shabad_starting_time, rrs.ending_time as shabad_ending_time, shabad_info.ending_id, to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.checked "+
+        "shabad_info.starting_id, rrs.starting_time as shabad_starting_time, rrs.ending_time as shabad_ending_time, " +
+        "shabad_info.ending_id, to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.checked as shabad_checked "+
         "from raagi_recording_shabad as rrs join shabad on rrs.shabad_sathaayi_title = shabad.sathaayi_title join shabad_info on shabad.sathaayi_id = shabad_info.sathaayi_id "+
         "where rrs.raagi_name=$1 and rrs.recording_title=$2 order by shabad_sathaayi_title",
         values: [req.params.raagi_name, req.params.recording_title]
@@ -302,7 +308,7 @@ router.post('/uploadShabad', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "update shabad_info set checked=false where starting_id=$1 and ending_id=$2",
+        text: "update shabad_info set checked=true where starting_id=$1 and ending_id=$2",
         values: [starting_id, ending_id]
     };
     client.query(query, (err, sqlResponse) => {
