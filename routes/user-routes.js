@@ -40,10 +40,28 @@ router.post('/signup', (req, res) => {
             };
             client.query(query, (err, sqlResponse) => {
                 if (err){
-                    console.log(err);
-                    res.json("Failure");
+                    console.log(err.constraint);
+                    if (err.constraint === "member_username_key"){
+                        res.json({
+                            "ResponseCode": 400,
+                            "Message": "Username already exists"
+                        });
+                    }else if(err.constraint === "member_pkey"){
+                        res.json({
+                            "ResponseCode": 400,
+                            "Message": "Email already exists"
+                        });
+                    }else{
+                        res.json({
+                            "ResponseCode": 400,
+                            "Error": err
+                        });
+                    }
                 }else{
-                    res.json("Success");
+                    res.json({
+                        "ResponseCode": 200,
+                        "Message": "User Added Successfully"
+                    });
                 }
                 client.end();
             });
@@ -66,15 +84,29 @@ router.post('/authenticate', (req, res) => {
        } else{
            if(sqlResponse.rowCount > 0){
                bcrypt.compare(req.body.password, sqlResponse.rows[0].password_hash, (err, isMatch) => {
-                   if (err) throw err;
+                   if (err){
+                       res.json({
+                           "ResponseCode": 400,
+                           "Message": err
+                       });
+                   }
                    if(isMatch){
-                       res.json("Success")
+                       res.json({
+                           "ResponseCode": 200,
+                           "Message": "Login successful"
+                       });
                    } else{
-                       res.json('Failure');
+                       res.json({
+                           "ResponseCode": 400,
+                           "Message": "Invalid Login"
+                       });
                    }
                });
            }else{
-               res.send("Failure")
+               res.json({
+                   "ResponseCode": 400,
+                   "Message": "Invalid Login"
+               });
            }
        }
         client.end();
@@ -89,9 +121,15 @@ router.post('/createPlaylist', (req, res) => {
     client.query("insert into playlist (name, username) values ($1, $2)", [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
         if(err){
             console.log(err);
-            res.json('Failure');
+            res.json({
+                "ResponseCode": 400,
+                "Message": "Error creating playlist"
+            });
         }else{
-            res.json('Success');
+            res.json({
+                "ResponseCode": 200,
+                "Message": "Playlist created successfully"
+            });
         }
         client.end();
     });
@@ -103,9 +141,15 @@ router.post('/deletePlaylist', (req, res) => {
     client.query("delete from playlist where name=$1 and username=$2", [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
         if(err){
             console.log(err);
-            res.json('Failure');
+            res.json({
+                "ResponseCode": 400,
+                "Message": "Error deleting playlist"
+            });
         }else{
-            res.json('Success');
+            res.json({
+                "ResponseCode": 200,
+                "Message": "Playlist deleted successfully"
+            });
         }
         client.end();
     });
@@ -121,7 +165,10 @@ router.post('/addShabads', (req, res) => {
                     [shabad.username, shabad.playlist_name, shabad.id]);
             }
             await client.query('COMMIT');
-            res.json("Success!");
+            res.json({
+                "ResponseCode": 200,
+                "Message": "Shabad(s) added successfully"
+            });
         }catch(e){
             await client.query('ROLLBACK');
             throw e
@@ -142,7 +189,10 @@ router.post('/removeShabads', (req, res) => {
                     [shabad.id, shabad.username, shabad.playlist_name]);
             }
             await client.query('COMMIT');
-            res.json("Success!");
+            res.json({
+                "ResponseCode": 200,
+                "Message": "Shabad(s) removed successfully"
+            });
         }catch(e){
             await client.query('ROLLBACK');
             throw e
