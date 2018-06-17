@@ -208,7 +208,7 @@ router.post('/addRaagiRecording', (req, res) =>{
         const client = await initialize_pool().connect();
 
         try{
-            let image_url = "https://s3.amazonaws.com/vismaadbani/vismaaddev/Raagis Photos/No Raagi.jpg";
+            let image_url = "https://s3.eu-west-2.amazonaws.com/vismaadnaad/Raagis%20Photos/No%20Raagi.jpg";
 
             await client.query('BEGIN');
             await client.query("INSERT INTO RAAGI (NAME, IMAGE_URL) VALUES ($1, $2) ON CONFLICT (NAME) DO NOTHING", [req.body.raagi_name, image_url]);
@@ -254,7 +254,7 @@ router.post('/uploadRecording', (req, res) => {
                 throw err;
             }else{
                 let params = {
-                    Bucket: "vismaadbani/vismaaddev/GurmatSagar Recordings/" + raagi_name,
+                    Bucket: "vismaadnaad/GurmatSagar Recordings/" + raagi_name,
                     Key: recording_title + ".mp3",
                     Body: data,
                     ContentType: "audio/mpeg"
@@ -438,7 +438,7 @@ function upload_shabad(shabad_english_title, raagi_name, res){
             console.log(err);
         } else{
             let params = {
-                Bucket: "vismaadbani/vismaaddev/Raagis/" + raagi_name,
+                Bucket: "vismaadnaad/Raagis/" + raagi_name,
                 Key: shabad_english_title + ".mp3",
                 Body: data,
                 ACL:'public-read',
