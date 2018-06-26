@@ -138,7 +138,8 @@ router.get('/raagis/:raagi_name/shabads', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "select rrs.id, rrs.shabad_sathaayi_title as shabad_english_title, rrs.recording_title, shabad_info.sathaayi_id, " +
+        text: "select rrs.id, rrs.raagi_name, rrs.shabad_sathaayi_title as shabad_english_title, rrs.recording_title, shabad_info.sathaayi_id, " +
+        "concat('https://s3.eu-west-2.amazonaws.com/vismaadnaad/Raagis/',rrs.raagi_name, '/', rrs.shabad_sathaayi_title, '.mp3') as shabad_url, " +
         "shabad_info.starting_id, shabad_info.ending_id, to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.checked as shabad_checked "+
         "from raagi_recording_shabad as rrs join shabad on rrs.shabad_sathaayi_title = shabad.sathaayi_title join shabad_info on shabad.sathaayi_id = shabad_info.sathaayi_id "+
         "where rrs.raagi_name=$1 order by shabad_sathaayi_title",
