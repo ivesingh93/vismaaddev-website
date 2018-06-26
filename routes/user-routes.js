@@ -229,9 +229,10 @@ router.get('/users/:username/playlists/:playlist_name', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "select rrs.id, rrs.raagi_name, rrs.recording_title, rrs.shabad_sathaayi_title as shabad_english_title, to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.sathaayi_id, shabad_info.starting_id, shabad_info.ending_id " +
-        "from playlist as p " +
-        "join playlist_shabad as ps on p.id = ps.playlist_id " +
+        text: "select rrs.id, rrs.raagi_name, rrs.recording_title, rrs.shabad_sathaayi_title as shabad_english_title, " +
+        "concat('https://s3.eu-west-2.amazonaws.com/vismaadnaad/Raagis/',rrs.raagi_name, '/', rrs.shabad_sathaayi_title, '.mp3') as shabad_url, " +
+        "to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.sathaayi_id, shabad_info.starting_id, shabad_info.ending_id " +
+        "from playlist as p join playlist_shabad as ps on p.id = ps.playlist_id " +
         "join  raagi_recording_shabad as rrs on ps.raagi_recording_shabad_id = rrs.id " +
         "join shabad on rrs.shabad_sathaayi_title=shabad.sathaayi_title " +
         "join shabad_info on shabad.sathaayi_id=shabad_info.sathaayi_id " +
