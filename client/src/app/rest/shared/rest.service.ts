@@ -5,7 +5,7 @@ import 'rxjs/add/operator/toPromise';
 @Injectable()
 export class RestService{
   //http://localhost:3000
-  private LOCALHOST = "http://localhost:3000";
+  private LOCALHOST = "";
 
   private RAAGIS_URL = this.LOCALHOST +  "/api/raagiRoutes/raagis";
   private ADD_RAAGI_RECORDING_URL = this.LOCALHOST +  "/api/raagiRoutes/addRaagiRecording";
@@ -26,7 +26,9 @@ export class RestService{
   private CHANGE_STARTING_ID = this.LOCALHOST + "/api/raagiRoutes/changeStartingID";
   private CHANGE_ENDING_ID = this.LOCALHOST + "/api/raagiRoutes/changeEndingID";
   private GET_SHABAD_BY_SATHAAYI_ID = this.LOCALHOST + "/api/raagiRoutes/shabads/";
-  private GET_SHABADS_WITH_NO_THEMES = this.LOCALHOST + "/api/raagiRoutes/shabadsWithNoThemes"
+  private GET_SHABAD_BY_SATHAAYI_TITLE = this.LOCALHOST + "/api/raagiRoutes/shabads/sathaayi_title/";
+  private GET_SHABADS_WITH_NO_THEMES = this.LOCALHOST + "/api/raagiRoutes/shabadsWithNoThemes";
+  private SET_STATUS_TO_PROD = this.LOCALHOST + "/api/raagiRoutes/setStatusToPROD";
   private ADD_SHABAD_THEMES = this.LOCALHOST + "/api/raagiRoutes/addShabadThemes/";
   private GET_RECENT_RECORDINGS = this.LOCALHOST + "/api/raagiRoutes/recentRecordings";
   private GET_SHABADS_RECORDING = this.LOCALHOST + "/api/raagiRoutes/recordings";
@@ -90,6 +92,13 @@ export class RestService{
       .catch(this.handleError);
   }
 
+  getShabadBySathaayiTitle(sathaayi_title): Promise<any>{
+    return this.http.get(this.GET_SHABAD_BY_SATHAAYI_TITLE + sathaayi_title)
+      .toPromise()
+      .then(this.extractData)
+      .catch(this.handleError);
+  }
+
   getRecordingsByRaagi(raagiName: string): Promise<any>{
     return this.http.get(this.GET_RECORDINGS_BY_RAAGI + raagiName + "/recordings")
       .toPromise()
@@ -134,6 +143,21 @@ export class RestService{
 
     return this.http.post(this.UPLOAD_RECORDING,
       recordingObj, options)
+      .toPromise()
+      .then(this.extractData)
+      .catch(this.handleError);
+  }
+
+  setStatusToPROD(raagi_name, recording_title){
+    let headers = new Headers({ 'Content-Type': 'application/json' });
+    let options = new RequestOptions({ headers: headers });
+
+    let recordingObj = {
+      raagi_name: raagi_name,
+      recording_title: recording_title
+    };
+
+    return this.http.put(this.SET_STATUS_TO_PROD, recordingObj, options)
       .toPromise()
       .then(this.extractData)
       .catch(this.handleError);

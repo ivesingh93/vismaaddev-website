@@ -75,9 +75,15 @@ export class UploadShabadsComponent implements OnInit {
       .catch(error =>  this.toastrService.error('', 'Recording uploading failed!', this.config));
   };
 
+  setStatusToPROD(){
+    this.restService.setStatusToPROD(this.selected_raagi, this.selected_recording_title)
+      .then(data => this.toastrService.success('', 'The status of the shabads under this recording has been set to PROD.', this.config))
+      .catch(error => this.toastrService.error('', 'Error setting the status to PRDO', this.config));
+  }
+
   onShabadSelected(value){
     this.shabad_panktis = [];
-    this.selected_shabad_url = "https://s3.amazonaws.com/vismaadbani/vismaaddev/Raagis/";
+    this.selected_shabad_url = "https://s3.eu-west-2.amazonaws.com/vismaadnaad/Raagis/";
     let selectedShabad = value['text'];
     for(let shabad of this.shabads_obj){
       if(shabad.shabad_english_title === selectedShabad){
@@ -88,7 +94,6 @@ export class UploadShabadsComponent implements OnInit {
     this.selected_shabad_english_title = this.selected_shabad_obj['shabad_english_title'];
     this.selected_shabad_url += this.selected_raagi + "/" + this.selected_shabad_english_title + ".mp3";
     this.selected_shabad_url = this.selected_shabad_url.replace(/ /g, "+");
-    console.log(this.selected_shabad_url);
     this.selected_shabad_starting_id = this.selected_shabad_obj['starting_id'];
     this.selected_shabad_ending_id = this.selected_shabad_obj['ending_id'];
 

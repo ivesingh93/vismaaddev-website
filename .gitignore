@@ -3,3 +3,5 @@ node_modules/
 public/
 aws/
 config/
+notes.txt
+package-lock.json

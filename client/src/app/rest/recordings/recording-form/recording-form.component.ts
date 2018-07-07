@@ -273,11 +273,34 @@ export class RecordingFormComponent implements OnInit {
               .catch(error => console.log(error));
           }
         }else{
-          let shabadObj = data;
-          componentThis.startingLines = [];
-          componentThis.endingLines = [];
-          componentThis.toastrService.warning('', shabadObj.shabad_english_title + " shabad found! Please select the shabad from Shabad Title.", componentThis.config);
+          let shabad_english_title = data.shabad_english_title;
 
+          componentThis.restService.getShabadBySathaayiTitle(data[0].shabad_english_title)
+            .then(function(data){
+              if(data == "Shabad not found"){
+                //If the selected line or sathayi has Kirtan ID, then grab just those lines.
+                if(kirtan_id !== null){
+                  componentThis.restService.getShabadLines(kirtan_id)
+                    .then(function(data){
+                      componentThis.processStartingLines(selected, data);
+
+                    })
+                    .catch(error => console.log(error));
+                }else{
+                  // Otherwise, grab the lines within the range.
+
+                  componentThis.restService.getRangeLines(selected.from, selected.to)
+                    .then(function(data){
+                      componentThis.processStartingLines(selected, data);
+                    })
+                    .catch(error => console.log(error));
+                }
+              }else{
+                componentThis.startingLines = [];
+                componentThis.endingLines = [];
+                componentThis.toastrService.warning('', shabad_english_title + " shabad found! Please select the shabad from Shabad Title.", componentThis.config);
+              }
+          });
         }
       })
       .catch(error => console.log(error));
