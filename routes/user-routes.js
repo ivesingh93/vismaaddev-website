@@ -269,10 +269,11 @@ router.post('/removeShabads', (req, res) => {
 });
 
 router.get('/users/:username/playlists', (req, res) => {
+    console.log(req.params.username);
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "select name from playlist where member_id=(select id from member where LOWER(username) LIKE LOWER($1)",
+        text: "select name from playlist where member_id=(select id from member where LOWER(username) LIKE LOWER($1))",
         values: [ req.params.username]
     };
     client.query(query, (err, sqlResponse) => {
