@@ -32,7 +32,7 @@ router.post('/signup', (req, res) => {
     client.connect();
     let query = {};
 
-    if(req.body.hasOwnProperty("password")){
+    if(req.body.source_of_login.toUpperCase() === "EMAIL"){
         bcrypt.genSalt(10, (err, salt) => {
             bcrypt.hash(req.body.password, salt, (err, hash) => {
                 if (err) throw err;
