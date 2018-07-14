@@ -32,7 +32,7 @@ router.post('/signup', (req, res) => {
     client.connect();
     let query = {};
 
-    if(req.body.source_of_login.toUpperCase() === "EMAIL"){
+    if(req.body.source_of_account.toUpperCase() === "EMAIL"){
         bcrypt.genSalt(10, (err, salt) => {
             bcrypt.hash(req.body.password, salt, (err, hash) => {
                 if (err) throw err;
@@ -116,15 +116,18 @@ router.post('/authenticate', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {};
-    if(source_of_account === "EMAIL"){
+    console.log("hello1");
+    if(source_of_account.toLowerCase() === "email"){
+        console.log("hello2");
         query = {
             text: "select account_id, password_hash, first_name, last_name, username from member where LOWER(account_id) LIKE LOWER($1) or LOWER(username) LIKE LOWER($2)",
             values: [account_id, username]
         };
-    }else if(source_of_account === "FACEBOOK" || source_of_account === "GMAIL"){
+    }else if(source_of_account.toLowerCase() === "facebook" || source_of_account === "gmail"){
+        console.log("hello3");
         query = {
             text: "select account_id, first_name, last_name, username from member where LOWER(account_id) LIKE LOWER($1)",
-            values: [account_id, username]
+            values: [account_id]
         };
     }
 
@@ -135,7 +138,7 @@ router.post('/authenticate', (req, res) => {
        } else{
            if(sqlResponse.rowCount > 0){
 
-               if(source_of_account === "EMAIL"){
+               if(source_of_account.toLowerCase() === "email"){
                    bcrypt.compare(password, sqlResponse.rows[0].password_hash, (err, isMatch) => {
                        if (err){
                            res.json({
@@ -159,7 +162,7 @@ router.post('/authenticate', (req, res) => {
                            });
                        }
                    });
-               }else if(source_of_account === "FACEBOOK" || source_of_account === "GMAIL"){
+               }else if(source_of_account.toLowerCase() === "facebook" || source_of_account.toLowerCase() === "gmail"){
                    res.json({
                        "ResponseCode": 200,
                        "Message": "Login successful",
