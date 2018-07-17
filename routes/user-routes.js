@@ -39,7 +39,7 @@ router.post('/signup', (req, res) => {
                 let query = {
                     text: "insert into member (account_id, username, password_hash, first_name, last_name, source_of_account) " +
                     "values ($1, $2, $3, $4, $5, $6)",
-                    values: [req.body.account_id, req.body.username, hash, req.body.first_name, req.body.last_name, req.body.source_of_login.toUpperCase()]
+                    values: [req.body.account_id, req.body.username, hash, req.body.first_name, req.body.last_name, req.body.source_of_account.toUpperCase()]
                 };
                 client.query(query, (err, sqlResponse) => {
                     if (err){
@@ -73,7 +73,7 @@ router.post('/signup', (req, res) => {
         let query = {
             text: "insert into member (account_id, username, first_name, last_name, source_of_account) " +
             "values ($1, $2, $3, $4, $5)",
-            values: [req.body.account_id, req.body.username, req.body.first_name, req.body.last_name, req.body.source_of_login.toUpperCase()]
+            values: [req.body.account_id, req.body.username, req.body.first_name, req.body.last_name, req.body.source_of_account.toUpperCase()]
         };
 
         client.query(query, (err, sqlResponse) => {
@@ -300,7 +300,7 @@ router.get('/users/:username/playlists/:playlist_name', (req, res) => {
     client.connect();
     let query = {
         text: "select rrs.id, raagi.name as raagi_name, recording.title as recording_title, shabad.sathaayi_title as shabad_english_title, " +
-        "concat('https://s3.eu-west-2.amazonaws.com/vismaadnaad/Raagis/',rrs.raagi_id, '/', rrs.shabad_id, '.mp3') as shabad_url, " +
+        "concat('https://s3.eu-west-2.amazonaws.com/vismaadnaad/Raagis/',raagi.name, '/', shabad.sathaayi_title, '.mp3') as shabad_url, " +
         "to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.sathaayi_id, shabad_info.starting_id, shabad_info.ending_id " +
         "from playlist as p " +
         "join playlist_shabad as ps on p.id = ps.playlist_id " +
