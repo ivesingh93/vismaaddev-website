@@ -276,7 +276,10 @@ router.get('/users/:username/playlists', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "select name from playlist where member_id=(select id from member where LOWER(username) LIKE LOWER($1))",
+        text: "select playlist.name, count(ps.playlist_id) as shabads_count from playlist " +
+        "left join playlist_shabad as ps on playlist.id = ps.playlist_id " +
+        "where member_id=(select id from member where LOWER(username) LIKE LOWER($1)) " +
+        "group by playlist.name",
         values: [ req.params.username]
     };
     client.query(query, (err, sqlResponse) => {
@@ -284,12 +287,7 @@ router.get('/users/:username/playlists', (req, res) => {
             console.log(err);
             res.json('Failure');
         }else{
-            let playlists = [];
-            for(let row of sqlResponse.rows){
-                playlists.push(row.name);
-            }
-            res.send(playlists);
-            console.log(sqlResponse);
+            res.send(sqlResponse.rows);
         }
         client.end();
     });

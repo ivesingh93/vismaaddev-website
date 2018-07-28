@@ -41,7 +41,7 @@
               Upload Recording
             </button>
             <button class="btn btn-primary btn-md" type="submit" (click)="setStatusToPROD()">
-              Set Status To PROD
+              Set This Recording's Shabad Status To PROD
             </button>
           </div>
           <br>
@@ -124,8 +124,8 @@
             HTML5 audio not supported
           </audio>
           <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Length: {{selected_shabad_obj['shabad_length']}}</span><br>
-          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Starting Time: {{selected_shabad_obj['shabad_starting_time']}}</span><br>
-          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Ending Time: {{selected_shabad_obj['shabad_ending_time']}}</span><br>
+          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Starting Time: {{selected_shabad_obj['shabad_starting_time'].replace(':', '')}}</span><br>
+          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Ending Time: {{selected_shabad_obj['shabad_ending_time'].replace(':', '')}}</span><br>
           <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Sathaayi ID: {{selected_shabad_obj['sathaayi_id']}}</span><br>
           <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Starting ID: {{selected_shabad_obj['starting_id']}}</span><br>
           <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Ending ID: {{selected_shabad_obj['ending_id']}}</span><br>
