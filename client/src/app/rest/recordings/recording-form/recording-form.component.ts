@@ -141,12 +141,23 @@ export class RecordingFormComponent implements OnInit {
         }
         raagiObj['raagi_name'] = raagi_name;
 
-        raagiObj['recordings'].push({
-          recording_title: recording_url.replace("http://www.gurmatsagar.com/files/", "").replace(/%20/g, " ").replace(".mp3", ""),
-          recording_date: recording_url.match(/\d{2}-\d{2}-\d{2}/g)[0],
-          recording_url: recording_url,
-          shabads: []
-        });
+        if(recording_url.includes('sgpc')){
+          let recording_arr = recording_url.split('/');
+          console.log(recording_arr);
+          raagiObj['recordings'].push({
+            recording_title: recording_arr[recording_arr.length - 1].replace(/%20/g, " ").replace(".mp3", ""),
+            recording_date: recording_url.match(/\d{2}-\d{2}-\d{2}/g)[0],
+            recording_url: recording_url,
+            shabads: []
+          });
+        }else if(recording_url.includes('gurmatsagar')){
+          raagiObj['recordings'].push({
+            recording_title: recording_url.replace("http://www.gurmatsagar.com/files/", "").replace(/%20/g, " ").replace(".mp3", ""),
+            recording_date: recording_url.match(/\d{2}-\d{2}-\d{2}/g)[0],
+            recording_url: recording_url,
+            shabads: []
+          });
+        }
       }
 
       for (let i = 0; i < this.recordingForm.value.shabads.length; i++) {
@@ -398,41 +409,47 @@ export class RecordingFormComponent implements OnInit {
         message = "Please select a Recording Title to edit. ";
       }else {
         let recordingURL = this.recordingForm.value.recordingURL;
-        if(!this.editRecording && ((recordingURL === null) || (recordingURL === "") || (!recordingURL.includes("http://www.gurmatsagar.com/")
-            || (!recordingURL.endsWith(".mp3"))))) {
-          message = "Please recheck the Recording URL field. Make sure the link starts with http://www.gurmatsagar.com/" +
+        if(!this.editRecording && ((recordingURL === null) || (recordingURL === "") || (!recordingURL.endsWith(".mp3")))) {
+          message = "Please recheck the Recording URL field. Make sure the link starts with either http://www.gurmatsagar.com/ or http://new.sgpc.net" +
             " and ends with .mp3. ";
         }else{
-          // Shabads
-          if(this.recordingForm.value.shabads[0].shabadTitle === null){
-            message = "Please select a Shabad Title or select Add New Shabad from Shabad 1. ";
-          }else {
-            for (let i = 0; i < this.recordingForm.value.shabads.length; i++) {
-              //Check if Shabad Title is null
-              if (this.recordingForm.value.shabads[i].shabadTitle === null) {
-                message = "Please select a Shabad Title or select Add New Shabad in Shabad " + (i + 1) + ". ";
-                break;
 
-                //Check if Shabad Title is selected to Add New Shabad AND New Shabad Title is either null or blank
-              } else if ((this.recordingForm.value.shabads[i].shabadTitle[0].text === "Add New Shabad")
-                && (this.recordingForm.value.shabads[i].newShabadTitle === null || this.recordingForm.value.shabads[i].newShabadTitle === "")) {
-                message = "Please enter a New Shabad Title in Shabad " + (i + 1) + ". ";
-                break;
 
-                //If neither, then get the Shabad Title
-              } else if(this.recordingForm.value.shabads[i].shabadTitle[0].text === "Add New Shabad"
-                && this.shabadsList.includes(this.recordingForm.value.shabads[i].newShabadTitle)){
-                message = this.recordingForm.value.shabads[i].newShabadTitle + " already exists.";
-              } else {
-                // Check if any of the field is blank.
-                let shabadErrorMessage = this.validateShabadInputs(i);
-                console.log(shabadErrorMessage);
-                if (shabadErrorMessage.length) {
-                  message = shabadErrorMessage + "in Shabad " + (i + 1) + ". ";
+          if((!recordingURL.includes("http://www.gurmatsagar.com/")) || (!recordingURL.includes("sgpc.net"))){
+            // Shabads
+            if(this.recordingForm.value.shabads[0].shabadTitle === null){
+              message = "Please select a Shabad Title or select Add New Shabad from Shabad 1. ";
+            }else {
+              for (let i = 0; i < this.recordingForm.value.shabads.length; i++) {
+                //Check if Shabad Title is null
+                if (this.recordingForm.value.shabads[i].shabadTitle === null) {
+                  message = "Please select a Shabad Title or select Add New Shabad in Shabad " + (i + 1) + ". ";
                   break;
+
+                  //Check if Shabad Title is selected to Add New Shabad AND New Shabad Title is either null or blank
+                } else if ((this.recordingForm.value.shabads[i].shabadTitle[0].text === "Add New Shabad")
+                  && (this.recordingForm.value.shabads[i].newShabadTitle === null || this.recordingForm.value.shabads[i].newShabadTitle === "")) {
+                  message = "Please enter a New Shabad Title in Shabad " + (i + 1) + ". ";
+                  break;
+
+                  //If neither, then get the Shabad Title
+                } else if(this.recordingForm.value.shabads[i].shabadTitle[0].text === "Add New Shabad"
+                  && this.shabadsList.includes(this.recordingForm.value.shabads[i].newShabadTitle)){
+                  message = this.recordingForm.value.shabads[i].newShabadTitle + " already exists.";
+                } else {
+                  // Check if any of the field is blank.
+                  let shabadErrorMessage = this.validateShabadInputs(i);
+                  console.log(shabadErrorMessage);
+                  if (shabadErrorMessage.length) {
+                    message = shabadErrorMessage + "in Shabad " + (i + 1) + ". ";
+                    break;
+                  }
                 }
               }
             }
+          }else{
+            message = "Please recheck the Recording URL field. Make sure the link starts with either http://www.gurmatsagar.com/ or http://new.sgpc.net" +
+              " and ends with .mp3. ";
           }
         }
       }
