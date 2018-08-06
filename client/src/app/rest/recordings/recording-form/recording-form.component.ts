@@ -415,7 +415,38 @@ export class RecordingFormComponent implements OnInit {
         }else{
 
 
-          if((!recordingURL.includes("http://www.gurmatsagar.com/")) || (!recordingURL.includes("sgpc.net"))){
+          if(this.editRecording && recordingURL == null){
+            if(this.recordingForm.value.shabads[0].shabadTitle === null){
+              message = "Please select a Shabad Title or select Add New Shabad from Shabad 1. ";
+            }else {
+              for (let i = 0; i < this.recordingForm.value.shabads.length; i++) {
+                //Check if Shabad Title is null
+                if (this.recordingForm.value.shabads[i].shabadTitle === null) {
+                  message = "Please select a Shabad Title or select Add New Shabad in Shabad " + (i + 1) + ". ";
+                  break;
+
+                  //Check if Shabad Title is selected to Add New Shabad AND New Shabad Title is either null or blank
+                } else if ((this.recordingForm.value.shabads[i].shabadTitle[0].text === "Add New Shabad")
+                  && (this.recordingForm.value.shabads[i].newShabadTitle === null || this.recordingForm.value.shabads[i].newShabadTitle === "")) {
+                  message = "Please enter a New Shabad Title in Shabad " + (i + 1) + ". ";
+                  break;
+
+                  //If neither, then get the Shabad Title
+                } else if(this.recordingForm.value.shabads[i].shabadTitle[0].text === "Add New Shabad"
+                  && this.shabadsList.includes(this.recordingForm.value.shabads[i].newShabadTitle)){
+                  message = this.recordingForm.value.shabads[i].newShabadTitle + " already exists.";
+                } else {
+                  // Check if any of the field is blank.
+                  let shabadErrorMessage = this.validateShabadInputs(i);
+                  console.log(shabadErrorMessage);
+                  if (shabadErrorMessage.length) {
+                    message = shabadErrorMessage + "in Shabad " + (i + 1) + ". ";
+                    break;
+                  }
+                }
+              }
+            }
+          }else if((!recordingURL.includes("http://www.gurmatsagar.com/")) || (!recordingURL.includes("sgpc.net"))){
             // Shabads
             if(this.recordingForm.value.shabads[0].shabadTitle === null){
               message = "Please select a Shabad Title or select Add New Shabad from Shabad 1. ";
