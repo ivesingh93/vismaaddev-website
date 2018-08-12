@@ -28,13 +28,15 @@ import { ShabadsComponent } from './rest/shabads/shabads.component';
 import { ShabadsThemesComponent } from './rest/shabads-themes/shabads-themes.component';
 import { KeysPipe } from './shared/pipes/keys.pipe';
 import { RaagiShabadsComponent } from './rest/raagi-shabads/raagi-shabads.component';
+import { UploadShabadsFromLocalComponent } from './rest/shabads/upload-shabads-from-local/upload-shabads-from-local.component';
 
 
 const appRoutes: Routes = [
   {path: 'recordings', component: RecordingsComponent},
   {path: 'shabads', component: ShabadsComponent},
   // {path: 'shabads_themes', component: ShabadsThemesComponent},
-  {path: 'raagi_shabads', component: RaagiShabadsComponent}
+  {path: 'raagi_shabads', component: RaagiShabadsComponent},
+  {path: 'upload_shabads_from_local', component: UploadShabadsFromLocalComponent}
 ];
 
 
@@ -50,7 +52,8 @@ const appRoutes: Routes = [
     ShabadsComponent,
     ShabadsThemesComponent,
     KeysPipe,
-    RaagiShabadsComponent
+    RaagiShabadsComponent,
+    UploadShabadsFromLocalComponent
   ],
   imports: [
     BrowserModule,

@@ -145,7 +145,8 @@ export class RecordingFormComponent implements OnInit {
           let recording_arr = recording_url.split('/');
           console.log(recording_arr);
           raagiObj['recordings'].push({
-            recording_title: recording_arr[recording_arr.length - 1].replace(/%20/g, " ").replace(".mp3", ""),
+            recording_title: recording_arr[recording_arr.length - 1].replace(/%20/g, " ").replace(".mp3", "")
+              .replace(/%28/, "(").replace(/%29/, ")"),
             recording_date: recording_url.match(/\d{2}-\d{2}-\d{2}/g)[0],
             recording_url: recording_url,
             shabads: []
@@ -494,14 +495,10 @@ export class RecordingFormComponent implements OnInit {
     if(this.recordingForm.value.shabads[index].shabadStartingTime === null
       || this.recordingForm.value.shabads[index].shabadStartingTime === ""){
       message = "Please enter the Shabad Starting Time ";
-    }else if(!this.recordingForm.value.shabads[index].shabadStartingTime.match(/\d{2}:\d{2}/)){
-      message = "Shabad Starting Time must be in mm:ss ";
     }else{
       if(this.recordingForm.value.shabads[index].shabadEndingTime === null
         || this.recordingForm.value.shabads[index].shabadEndingTime === ""){
         message = "Please enter the Shabad Ending Time ";
-      }else if(!this.recordingForm.value.shabads[index].shabadEndingTime.match(/\d{2}:\d{2}/)){
-        message = "Shabad Ending Time must be in mm:ss ";
       }else{
         if(this.recordingForm.value.shabads[index].shabadTitle[0].text === "Add New Shabad"){
           if(this.recordingForm.value.shabads[index].initials === null

@@ -252,7 +252,24 @@ router.post('/addRaagiRecording', (req, res) =>{
 
 
             for(let shabad of req.body.recordings[0].shabads){
-                let shabad_length = diff(shabad.shabad_starting_time, shabad.shabad_ending_time);
+                let starting_time, ending_time;
+
+                if(shabad.shabad_starting_time.length === 4){
+                    starting_time = shabad.shabad_starting_time.slice(0, 2) + ":" + shabad.shabad_starting_time.slice(2,4);
+                }else{
+                    starting_time = shabad.shabad_starting_time;
+                }
+
+                if(shabad.shabad_ending_time.length === 4){
+                    ending_time = shabad.shabad_ending_time.slice(0, 2) + ":" + shabad.shabad_ending_time.slice(2,4);
+                }else{
+                    ending_time = shabad.shabad_ending_time;
+                }
+
+                console.log(starting_time + "   " + ending_time);
+
+
+                let shabad_length = diff(starting_time, ending_time);
 
                 let shabad_info_rows = await client.query("INSERT INTO SHABAD_INFO (SATHAAYI_ID, STARTING_ID, ENDING_ID, CHECKED) VALUES ($1, $2, $3, $4) ON CONFLICT (SATHAAYI_ID) DO NOTHING RETURNING ID",
                     [shabad.sathaayi_id, shabad.starting_id, shabad.ending_id, false]);
@@ -270,7 +287,7 @@ router.post('/addRaagiRecording', (req, res) =>{
                 shabad_id = shabad_rows.rows[0].id;
 
                 await client.query("INSERT INTO RAAGI_RECORDING_SHABAD (RAAGI_ID, RECORDING_ID, SHABAD_ID, STARTING_TIME, ENDING_TIME, LENGTH, STATUS) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-                    [raagi_id, recording_id, shabad_id, shabad.shabad_starting_time, shabad.shabad_ending_time, shabad_length, "DEV"]);
+                    [raagi_id, recording_id, shabad_id, starting_time, ending_time, shabad_length, "DEV"]);
             }
 
             await client.query('COMMIT');
@@ -288,30 +305,13 @@ router.post('/uploadRecording', (req, res) => {
     let raagi_name = req.body.raagi_name;
     let recording_title = req.body.recording_title;
     let recording_url = req.body.recording_url;
-    let s3 = new AWS.S3();
 
     let stream = request.get(recording_url).on('error', function(err){
         console.log(err);
     }).pipe(fs.createWriteStream(recording_title + ".mp3"));
 
-    stream.on('finish', function(){
+    stream.on('finish', () => res.json("Recording uploaded!"));
 
-        fs.readFile(recording_title + ".mp3", function(err, data){
-            if(err){
-                throw err;
-            }else{
-                let params = {
-                    Bucket: "vismaadnaad/GurmatSagar Recordings/" + raagi_name,
-                    Key: recording_title + ".mp3",
-                    Body: data,
-                    ContentType: "audio/mpeg"
-                };
-                s3.putObject(params, function(err, data){
-                    res.json("Recording uploaded!");
-                });
-            }
-        })
-    });
 });
 
 // Check if new shabad's checked field is set to true when new shabad is uploaded
@@ -416,7 +416,24 @@ router.put('/raagis/:raagi_name/recordings/:recording_title/addShabads', (req, r
             let shabad_info_id, shabad_id;
             await client.query('BEGIN');
             for(let shabad of req.body.shabads){
-                let shabad_length = diff(shabad.shabad_starting_time, shabad.shabad_ending_time);
+
+                let starting_time, ending_time;
+
+                if(shabad.shabad_starting_time.length === 4){
+                    starting_time = shabad.shabad_starting_time.slice(0, 2) + ":" + shabad.shabad_starting_time.slice(2,4);
+                }else{
+                    starting_time = shabad.shabad_starting_time;
+                }
+
+                if(shabad.shabad_ending_time.length === 4){
+                    ending_time = shabad.shabad_ending_time.slice(0, 2) + ":" + shabad.shabad_ending_time.slice(2,4);
+                }else{
+                    ending_time = shabad.shabad_ending_time;
+                }
+
+                console.log(starting_time + "   " + ending_time);
+
+                let shabad_length = diff(starting_time, ending_time);
 
                 let shabad_info_rows = await client.query("INSERT INTO SHABAD_INFO (SATHAAYI_ID, STARTING_ID, ENDING_ID, CHECKED) VALUES ($1, $2, $3, $4) ON CONFLICT (SATHAAYI_ID) DO NOTHING RETURNING ID",
                     [shabad.sathaayi_id, shabad.starting_id, shabad.ending_id, false]);
@@ -428,13 +445,13 @@ router.put('/raagis/:raagi_name/recordings/:recording_title/addShabads', (req, r
                 let shabad_rows = await client.query("INSERT INTO SHABAD (SATHAAYI_TITLE, SHABAD_INFO_ID) VALUES ($1, $2) ON CONFLICT (SATHAAYI_TITLE) DO NOTHING RETURNING ID",
                     [shabad.shabad_english_title, shabad_info_id]);
                 if(shabad_rows.rows.length === 0){
-                    shabad_rows = await client.query("SELECT ID FROM SHABAD WHERE SATHAAYI_TITLE=$1", shabad.shabad_english_title);
+                    shabad_rows = await client.query("SELECT ID FROM SHABAD WHERE SATHAAYI_TITLE=$1", [shabad.shabad_english_title]);
                 }
                 shabad_id = shabad_rows.rows[0].id;
 
                 await client.query("INSERT INTO RAAGI_RECORDING_SHABAD (RAAGI_ID, RECORDING_ID, SHABAD_ID, STARTING_TIME, ENDING_TIME, LENGTH, STATUS) " +
                     "VALUES ((SELECT ID FROM RAAGI WHERE NAME = $1), (SELECT ID FROM RECORDING WHERE TITLE = $2), $3, $4, $5, $6, $7)",
-                    [req.params.raagi_name, req.params.recording_title, shabad_id, shabad.shabad_starting_time, shabad.shabad_ending_time, shabad_length, "DEV"]);
+                    [req.params.raagi_name, req.params.recording_title, shabad_id, starting_time, ending_time, shabad_length, "DEV"]);
             }
             await client.query('COMMIT');
             res.json("Success!");
