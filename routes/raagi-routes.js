@@ -51,7 +51,7 @@ router.get('/raagi_info', (req, res) => {
     client.connect();
     const query = "select row_number() over(order by raagi.name) as raagi_id, raagi.name as raagi_name, raagi.image_url as raagi_image_url, " +
         "count(rrs.shabad_id) as shabads_count, to_char(sum(rrs.length), 'HH24:MI:SS') as total_length " +
-        "from raagi join raagi_recording_shabad as rrs ON raagi.id=rrs.raagi_id group by raagi.id";
+        "from raagi join raagi_recording_shabad as rrs ON raagi.id=rrs.raagi_id where rrs.status = 'PROD' group by raagi.id";
     client.query(query, (err, sqlResponse) => {
         let raagis_info = [];
         for(let raagi of sqlResponse.rows){
