@@ -266,9 +266,6 @@ router.post('/addRaagiRecording', (req, res) =>{
                     ending_time = shabad.shabad_ending_time;
                 }
 
-                console.log(starting_time + "   " + ending_time);
-
-
                 let shabad_length = diff(starting_time, ending_time);
 
                 let shabad_info_rows = await client.query("INSERT INTO SHABAD_INFO (SATHAAYI_ID, STARTING_ID, ENDING_ID, CHECKED) VALUES ($1, $2, $3, $4) ON CONFLICT (SATHAAYI_ID) DO NOTHING RETURNING ID",
@@ -351,8 +348,6 @@ router.post('/uploadShabad', (req, res) => {
     let fade_cmd = "ffmpeg -i " + shabad_english_title.replace(/ /g, "\\ ") + "\\ temp.mp3 "
         + "-af \"afade=t=in:ss=0:d=4,afade=t=out:st=" + (end_seconds - 4) + ":d=4\" " + shabad_english_title.replace(/ /g, "\\ ") + ".mp3";
     let execute_fade_cmd = child_process.execSync(fade_cmd, { stdio: ['pipe', 'pipe', 'ignore']});
-
-
 
     let client = initialize_client();
     client.connect();
@@ -516,7 +511,12 @@ function diff(start, end) {
     diff -= hours * 1000 * 60 * 60;
     let minutes = Math.floor(diff / 1000 / 60);
 
-    return "0:" + (hours <= 9 ? "0" : "") + hours + ":" + (minutes <= 9 ? "0" : "") + minutes;
+    if(hours > 59){
+        hours = hours - 60;
+        return "01:" + (hours <= 9 ? "0" : "") + hours + ":" + (minutes <= 9 ? "0" : "") + minutes;
+    }else{
+        return "0:" + (hours <= 9 ? "0" : "") + hours + ":" + (minutes <= 9 ? "0" : "") + minutes;
+    }
 }
 
 function upload_shabad(shabad_english_title, raagi_name, res){

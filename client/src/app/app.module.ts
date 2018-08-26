@@ -29,6 +29,8 @@ import { ShabadsThemesComponent } from './rest/shabads-themes/shabads-themes.com
 import { KeysPipe } from './shared/pipes/keys.pipe';
 import { RaagiShabadsComponent } from './rest/raagi-shabads/raagi-shabads.component';
 import { UploadShabadsFromLocalComponent } from './rest/shabads/upload-shabads-from-local/upload-shabads-from-local.component';
+import { UploadKathaComponent } from './rest/katha-recordings/upload-katha/upload-katha.component';
+import {KathaService} from "./rest/shared/katha.service";
 
 
 const appRoutes: Routes = [
@@ -36,7 +38,8 @@ const appRoutes: Routes = [
   {path: 'shabads', component: ShabadsComponent},
   // {path: 'shabads_themes', component: ShabadsThemesComponent},
   {path: 'raagi_shabads', component: RaagiShabadsComponent},
-  {path: 'upload_shabads_from_local', component: UploadShabadsFromLocalComponent}
+  {path: 'upload_shabads_from_local', component: UploadShabadsFromLocalComponent},
+  {path: 'upload_katha', component: UploadKathaComponent}
 ];
 
 
@@ -53,7 +56,8 @@ const appRoutes: Routes = [
     ShabadsThemesComponent,
     KeysPipe,
     RaagiShabadsComponent,
-    UploadShabadsFromLocalComponent
+    UploadShabadsFromLocalComponent,
+    UploadKathaComponent
   ],
   imports: [
     BrowserModule,
@@ -72,7 +76,7 @@ const appRoutes: Routes = [
     MatListModule,
     MatCheckboxModule
   ],
-  providers: [RestService],
+  providers: [RestService, KathaService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

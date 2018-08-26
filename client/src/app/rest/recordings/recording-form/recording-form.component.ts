@@ -126,6 +126,7 @@ export class RecordingFormComponent implements OnInit {
     };
     let raagi_name = "";
     let newRaagi = false;
+    let katha = false;
 
     if(message){
       this.toastrService.error("", message, this.config);
@@ -155,6 +156,14 @@ export class RecordingFormComponent implements OnInit {
           raagiObj['recordings'].push({
             recording_title: recording_url.replace("http://www.gurmatsagar.com/files/", "").replace(/%20/g, " ").replace(".mp3", ""),
             recording_date: recording_url.match(/\d{2}-\d{2}-\d{2}/g)[0],
+            recording_url: recording_url,
+            shabads: []
+          });
+        }else if(recording_url.includes('gurmatveechar')){
+          katha = false;
+          raagiObj['recordings'].push({
+            recording_title: recording_url.replace("http://www.gurmatveechar.com/audios/Katha/02_Present_Day_Katha/Giani_Sant_Singh_Maskeen/Giani.Sant.Singh.Maskeen--", "")
+              .replace('.mp3', '').replace(/\./g,' ') + " - recording",
             recording_url: recording_url,
             shabads: []
           });
@@ -201,7 +210,21 @@ export class RecordingFormComponent implements OnInit {
         if(this.editRecording) {
           shabadsObj.shabads.push(shabadObj);
         }else{
-          raagiObj.recordings[0].shabads.push(shabadObj);
+
+          if(katha){
+            console.log(raagiObj);
+            console.log(raagiObj['recordings'][0]['recording_title']);
+            raagiObj.recordings[0].shabads.push({
+              shabad_english_title: (raagiObj['recordings'][0]['recording_title']).replace(' - recording', ''),
+              shabad_starting_time: this.recordingForm.value.shabads[i].shabadStartingTime,
+              shabad_ending_time: this.recordingForm.value.shabads[i].shabadEndingTime,
+              sathaayi_id: 1,
+              starting_id: 1,
+              ending_id: 3
+            })
+          }else{
+            raagiObj.recordings[0].shabads.push(shabadObj);
+          }
         }
       }
 
@@ -412,7 +435,7 @@ export class RecordingFormComponent implements OnInit {
         let recordingURL = this.recordingForm.value.recordingURL;
         if(!this.editRecording && ((recordingURL === null) || (recordingURL === "") || (!recordingURL.endsWith(".mp3")))) {
           message = "Please recheck the Recording URL field. Make sure the link starts with either http://www.gurmatsagar.com/ or http://new.sgpc.net" +
-            " and ends with .mp3. ";
+            " or http://www.gurmatveechar.com/ and ends with .mp3. ";
         }else{
 
 
@@ -447,7 +470,8 @@ export class RecordingFormComponent implements OnInit {
                 }
               }
             }
-          }else if((!recordingURL.includes("http://www.gurmatsagar.com/")) || (!recordingURL.includes("sgpc.net"))){
+          }else if((!recordingURL.includes("http://www.gurmatsagar.com/")) || (!recordingURL.includes("sgpc.net")) ||
+            (!recordingURL.includes("http://www.gurmatveechar.com/")) ){
             // Shabads
             if(this.recordingForm.value.shabads[0].shabadTitle === null){
               message = "Please select a Shabad Title or select Add New Shabad from Shabad 1. ";
@@ -481,7 +505,7 @@ export class RecordingFormComponent implements OnInit {
             }
           }else{
             message = "Please recheck the Recording URL field. Make sure the link starts with either http://www.gurmatsagar.com/ or http://new.sgpc.net" +
-              " and ends with .mp3. ";
+              " or http://www.gurmatveechar.com and ends with .mp3. ";
           }
         }
       }

@@ -1,0 +1,34 @@
+<div class="container-fluid">
+  <h1>Katha Form</h1>
+  <form [formGroup]="kathaForm" (ngSubmit)="onSubmit">
+
+    <div class="form-group">
+
+      <div class="row">
+
+        <div class="col-md-6">
+          <label>Katha Vaachak</label>
+          <br>
+          <ng-select
+            id="kathaVaachak"
+            *ngIf="kathaVaachaks.length > 0"
+            formControlName="kathaVaachak"
+            placeholder="Select Katha Vaachak"
+            (selected)="onKathaVaachakSelected($event)"
+            [items]="kathaVaachaks">
+          </ng-select>
+        </div>
+
+        <div class="col-md-6">
+          <div class="form-group" *ngIf="selectedKathaVaachak === 'Add New Katha Vaachak'">
+            <label>New Katha Vaachak</label>
+            <input type="text" class="form-control" id="newKathaVaachak" formControlName="newKathaVaachak">
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </form>
+</div>

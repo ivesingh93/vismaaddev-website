@@ -5,6 +5,7 @@ const cors = require('cors');
 const raagi_route = require('./routes/raagi-routes');
 const sggs_route = require('./routes/sggs-routes');
 const user_route = require('./routes/user-routes');
+const katha_route = require('./routes/katha-routes');
 const app = express();
 
 // app.use(express.static(path.join(__dirname, 'public')));
@@ -17,6 +18,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use('/api/raagiRoutes', raagi_route);
 app.use('/api/sggsRoutes', sggs_route);
 app.use('/api/userRoutes', user_route);
+app.use('/api/kathaRoutes', katha_route);
 
 app.get('/', (req, res) => {
     res.send('Invalid Endpoint');

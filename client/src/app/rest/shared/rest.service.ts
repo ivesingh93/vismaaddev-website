@@ -5,7 +5,7 @@ import 'rxjs/add/operator/toPromise';
 @Injectable()
 export class RestService{
   //http://localhost
-  private LOCALHOST = "";
+  private LOCALHOST = "http://localhost";
 
   private RAAGIS_URL = this.LOCALHOST +  "/api/raagiRoutes/raagis";
   private ADD_RAAGI_RECORDING_URL = this.LOCALHOST +  "/api/raagiRoutes/addRaagiRecording";
