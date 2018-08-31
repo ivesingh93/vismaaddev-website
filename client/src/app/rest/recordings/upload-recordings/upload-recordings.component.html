@@ -1,0 +1,31 @@
+<div class="container-fluid">
+  <h1>Upload Recordings</h1>
+  <br>
+  <form [formGroup]="recordingForm" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <div class="row">
+        <div class="col-md-2">
+          <!--Select Raagi Name-->
+            <label for="raagiName">Raagi Name</label>
+            <br>
+            <ng-select id="raagiName"
+                       *ngIf="raagiNamesList.length > 0"
+                       formControlName="raagiName"
+                       placeholder="Select Raagi Name"
+                       (selected)="onRaagiSelected($event)"
+                       [items]="raagiNamesList">
+            </ng-select>
+          </div>
+          <!-- New Raagi Name -->
+          <div class="col-md-2">
+            <div class="form-group" *ngIf="newRaagi">
+              <label for="newRaagiName">New Raagi Name</label>
+              <input type="text" class="form-control" id="newRaagiName" formControlName="newRaagiName">
+            </div>
+          </div>
+        </div>
+      </div>
+
+    <button class="btn btn-primary" type="submit">Submit</button>
+  </form>
+</div>

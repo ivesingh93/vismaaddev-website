@@ -33,7 +33,22 @@ export class RestService{
   private GET_RECENT_RECORDINGS = this.LOCALHOST + "/api/raagiRoutes/recentRecordings";
   private GET_SHABADS_RECORDING = this.LOCALHOST + "/api/raagiRoutes/recordings";
   private GET_SHABAD_THEMES = this.LOCALHOST + "/api/raagiRoutes/shabads/";
+  private POST_RECORDINGS_FROM_LOCAL = this.LOCALHOST + "/api/raagiRoutes/uploadRecordingFromLocal";
+
+
+
+
   constructor(private http: Http){}
+
+  uploadRecordingsFromLocal(raagi_name, recording_path){
+    let headers = new Headers({ 'Content-Type': 'application/json' });
+    let options = new RequestOptions({ headers: headers });
+
+    return this.http.post(this.POST_RECORDINGS_FROM_LOCAL, {"raagi_name": raagi_name, "recording_path": recording_path}, options)
+      .toPromise()
+      .then(this.extractData)
+      .catch(this.handleError);
+  }
 
   addRaagiRecording(raagi_obj){
     let headers = new Headers({ 'Content-Type': 'application/json' });

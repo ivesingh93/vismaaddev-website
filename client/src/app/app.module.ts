@@ -31,6 +31,7 @@ import { RaagiShabadsComponent } from './rest/raagi-shabads/raagi-shabads.compon
 import { UploadShabadsFromLocalComponent } from './rest/shabads/upload-shabads-from-local/upload-shabads-from-local.component';
 import { UploadKathaComponent } from './rest/katha-recordings/upload-katha/upload-katha.component';
 import {KathaService} from "./rest/shared/katha.service";
+import { UploadRecordingsComponent } from './rest/recordings/upload-recordings/upload-recordings.component';
 
 
 const appRoutes: Routes = [
@@ -39,7 +40,8 @@ const appRoutes: Routes = [
   // {path: 'shabads_themes', component: ShabadsThemesComponent},
   {path: 'raagi_shabads', component: RaagiShabadsComponent},
   {path: 'upload_shabads_from_local', component: UploadShabadsFromLocalComponent},
-  {path: 'upload_katha', component: UploadKathaComponent}
+  {path: 'upload_katha', component: UploadKathaComponent},
+  {path: 'upload_recordings_from_local', component: UploadRecordingsComponent}
 ];
 
 
@@ -57,7 +59,8 @@ const appRoutes: Routes = [
     KeysPipe,
     RaagiShabadsComponent,
     UploadShabadsFromLocalComponent,
-    UploadKathaComponent
+    UploadKathaComponent,
+    UploadRecordingsComponent
   ],
   imports: [
     BrowserModule,
