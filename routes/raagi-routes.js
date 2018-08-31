@@ -311,6 +311,10 @@ router.post('/uploadRecording', (req, res) => {
 
 });
 
+router.post('/uploadShabadFromLocal', (req, res) => {
+
+});
+
 // Check if new shabad's checked field is set to true when new shabad is uploaded
 router.post('/uploadShabad', (req, res) => {
     let shabad_english_title = req.body.shabad.shabad_english_title;

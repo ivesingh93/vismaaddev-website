@@ -13,6 +13,8 @@ export class RecordingFormComponent implements OnInit {
 
 
   editRecording: boolean = false;
+  isUploadingShabadsFromLocal: boolean = false;
+  fileToUpload: File = null;
 
   raagiNamesList = [];
   recordingTitleList = [];
@@ -261,9 +263,25 @@ export class RecordingFormComponent implements OnInit {
     }
   }
 
-  onEditRecording(value){
-      this.editRecording = value;
+  onEditRecording(){
+    this.editRecording = !this.editRecording;
+    this.isUploadingShabadsFromLocal = false;
   }
+
+  onUploadingShabadsFromLocal(){
+    this.isUploadingShabadsFromLocal = !this.isUploadingShabadsFromLocal;
+    this.editRecording = false;
+  }
+
+  onShabadUploadFromLocal(){
+
+
+  }
+
+  handleFileInput(files: FileList) {
+    this.fileToUpload = files.item(0);
+  }
+
 
   // When sathayi is selected, process starting lines array.
   onLineSelected(value: any, index){
@@ -599,6 +617,7 @@ export class RecordingFormComponent implements OnInit {
       newShabadTitle: new FormControl(null),
       shabadUrl: new FormControl(null),
       initials: new FormControl(null),
+      fileName: new FormControl(null),
       shabadStartingTime: new FormControl(null),
       shabadEndingTime: new FormControl(null),
       sathaayiId: new FormControl(null),
