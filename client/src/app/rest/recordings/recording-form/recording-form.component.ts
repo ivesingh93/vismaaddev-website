@@ -274,7 +274,7 @@ export class RecordingFormComponent implements OnInit {
   }
 
   onShabadUploadFromLocal(){
-
+    this.restService.uploadShabadFile(this.fileToUpload);
 
   }
 

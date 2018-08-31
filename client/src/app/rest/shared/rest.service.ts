@@ -1,6 +1,8 @@
 import {Injectable} from '@angular/core';
 import {Http, Response, Headers, RequestOptions} from '@angular/http';
 import 'rxjs/add/operator/toPromise';
+import * as AWS from 'aws-sdk/global';
+import * as S3 from 'aws-sdk/clients/s3';
 
 @Injectable()
 export class RestService{
@@ -268,6 +270,35 @@ export class RestService{
       .toPromise()
       .then(this.extractData)
       .catch(this.handleError);
+  }
+
+  uploadShabadFile(file) {
+
+    const bucket = new S3(
+      {
+        accessKeyId: '',
+        secretAccessKey: '',
+        region: ''
+      }
+    );
+
+    const params = {
+      Bucket: 'vismaadnaad',
+      Key: "Raagis/Bhai Dalbir Singh Jee/" + file.name,
+      Body: file,
+      ACL:'public-read',
+      ContentType: "audio/mpeg"
+    };
+
+    bucket.putObject(params, function (err, data) {
+      if (err) {
+        console.log('There was an error uploading your file: ', err);
+        return false;
+      }
+
+      console.log('Successfully uploaded file.', data);
+      return true;
+    });
   }
 
   private extractData(responseSerialized: Response): Promise<any>{
