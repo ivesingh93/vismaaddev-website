@@ -116,14 +116,14 @@
             <div class="row">
 
               <!--Shabad Start Time-->
-              <div class="col-md-3" *ngIf="!isUploadingShabadsFromLocal">
+              <div class="col-md-3">
                 <label>Enter Shabad Starting Time</label>
                 <input type="text" class="form-control" style="width: 150px;" formControlName="shabadStartingTime" id="shabadStartingTime">
                 <br>
               </div>
 
               <!--Shabad End Time-->
-              <div class="col-md-3" *ngIf="!isUploadingShabadsFromLocal">
+              <div class="col-md-3">
                 <label>Enter Shabad Ending Time</label>
                 <br>
                 <input type="text" class="form-control" style="width: 150px;" formControlName="shabadEndingTime" id="shabadEndingTime">
@@ -157,15 +157,9 @@
                 <div *ngIf="selectedShabads[i] === 'Add New Shabad'">
                   <br><br>
                 </div>
-
                 <label class="btn btn-default">
                   <input type="file" id="file" (change)="handleFileInput($event.target.files)">
                 </label>
-
-                <br>
-
-                <button (click)="onShabadUploadFromLocal()" type="button" class="btn btn-primary">Upload Shabad From Local</button>
-
               </div>
             </div>
 

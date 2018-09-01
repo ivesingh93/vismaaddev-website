@@ -272,19 +272,24 @@ export class RestService{
       .catch(this.handleError);
   }
 
-  uploadShabadFile(file) {
+  uploadShabadFile(file, raagiObj) {
+    let that = this;
+    console.log(raagiObj);
+    let key = "Raagis/" + raagiObj.raagi_name + "/" + raagiObj['recordings'][0]['shabads'][0].shabad_english_title + ".mp3";
+
+    console.log(key);
 
     const bucket = new S3(
       {
-        accessKeyId: '',
-        secretAccessKey: '',
-        region: ''
+        accessKeyId: 'AKIAIJVAJSESCK453L2Q',
+        secretAccessKey: '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',
+        region: 'eu-west-2'
       }
     );
 
     const params = {
       Bucket: 'vismaadnaad',
-      Key: "Raagis/Bhai Dalbir Singh Jee/" + file.name,
+      Key: key,
       Body: file,
       ACL:'public-read',
       ContentType: "audio/mpeg"
@@ -297,8 +302,10 @@ export class RestService{
       }
 
       console.log('Successfully uploaded file.', data);
+      that.addRaagiRecording(raagiObj);
       return true;
     });
+
   }
 
   private extractData(responseSerialized: Response): Promise<any>{
