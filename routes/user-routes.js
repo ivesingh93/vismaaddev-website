@@ -207,7 +207,8 @@ router.post('/createPlaylist', (req, res) => {
 router.post('/deletePlaylist', (req, res) => {
     let client = initialize_client();
     client.connect();
-    client.query("delete from playlist where name=$1 and member_id=(select id from member where LOWER(username) LIKE LOWER($2))", [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
+    client.query("delete from playlist where name=$1 and member_id=(select id from member where LOWER(username) LIKE LOWER($2))",
+        [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
         if(err){
             console.log(err);
             res.json({
@@ -230,8 +231,9 @@ router.post('/addShabads', (req, res) => {
         try{
             await client.query('BEGIN');
             for(let shabad of req.body){
-                await client.query("insert into playlist_shabad (playlist_id, raagi_recording_shabad_id) values ((select id from playlist where member_id=(select id from member where LOWER(username) LIKE LOWER($1)) and name=$2), $3)",
-                    [shabad.username, shabad.playlist_name, shabad.id]);
+                await client.query("insert into playlist_shabad (playlist_id, raagi_recording_shabad_id) values" +
+                    " ((select id from playlist where member_id=(select id from member where LOWER(username) LIKE " +
+                    "LOWER($1)) and name=$2), $3)", [shabad.username, shabad.playlist_name, shabad.id]);
             }
             await client.query('COMMIT');
             res.json({
@@ -270,6 +272,108 @@ router.post('/removeShabads', (req, res) => {
         }
     })().catch(e => console.error(e.stack));
 });
+
+router.post('/likeShabad', (req, res) => {
+    (async () => {
+        const client = await initialize_pool().connect();
+        try{
+            await client.query('BEGIN');
+            let username = req.body.username;
+            let rrs_id = req.body.id;
+
+            console.log(req.body);
+
+            await client.query("insert into member_raagi_recording_shabad (raagi_recording_shabad_id, member_id) " +
+                "values ($1, (select id from member where LOWER(username) LIKE LOWER($2)))", [rrs_id, username]);
+
+            await client.query("update raagi_recording_shabad set likes = likes + 1 where id = $1", [rrs_id]);
+
+            await client.query('COMMIT');
+            res.json({
+                "ResponseCode": 200,
+                "Message": "Shabad liked successfully"
+            })
+        }catch(e){
+            await client.query('ROLLBACK');
+            throw e;
+        }finally{
+            client.release();
+        }
+    })().catch(e => console.error(e.stack));
+});
+
+router.post('/unlikeShabad', (req, res) => {
+    (async () => {
+        const client = await initialize_pool().connect();
+        try{
+            await client.query('BEGIN');
+            let username = req.body.username;
+            let rrs_id = req.body.id;
+
+            console.log(req.body);
+
+            await client.query("delete from member_raagi_recording_shabad where raagi_recording_shabad_id = $1 and " +
+                "member_id = (select id from member where LOWER(username) LIKE LOWER($2))", [rrs_id, username]);
+
+            await client.query("update raagi_recording_shabad set likes = likes - 1 where id = $1", [rrs_id]);
+
+            await client.query('COMMIT');
+            res.json({
+                "ResponseCode": 200,
+                "Message": "Shabad unliked successfully"
+            })
+        }catch(e){
+            await client.query('ROLLBACK');
+            throw e;
+        }finally{
+            client.release();
+        }
+    })().catch(e => console.error(e.stack));
+});
+
+router.get('/shabadLikes/:id', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    client.query("select likes from raagi_recording_shabad as rrs where rrs.id = $1", [req.params.id], (err, sqlResponse) => {
+        if(err){
+            console.log(err);
+            res.json({
+                "ResponseCode": 400,
+                "Result": "Failure"
+            });
+        }else{
+            res.json(sqlResponse.rows[0]);
+        }
+    });
+});
+
+router.get('/members/:username/shabadLikes/:id', (req, res) => {
+   let client = initialize_client();
+   client.connect();
+   client.query("select * from member_raagi_recording_shabad where raagi_recording_shabad_id = $1 and member_id = " +
+       " (select id from member where LOWER(username) LIKE LOWER($2))", [req.params.id, req.params.username], (err, sqlRes) => {
+      if(err){
+          console.log(err);
+          res.json({
+              "ResponseCode": 400,
+              "Result": "Failure"
+          });
+      } else{
+          if(sqlRes.rowCount === 1){
+              res.json({
+                  "ResponseCode": 200,
+                  "Result": true
+              });
+          }else{
+              res.json({
+                  "ResponseCode": 200,
+                  "Result": false
+              });
+          }
+      }
+   });
+});
+
 
 router.get('/users/:username/playlists', (req, res) => {
     console.log(req.params.username);
