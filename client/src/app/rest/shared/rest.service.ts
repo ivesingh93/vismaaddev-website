@@ -3,6 +3,7 @@ import {Http, Response, Headers, RequestOptions} from '@angular/http';
 import 'rxjs/add/operator/toPromise';
 import * as AWS from 'aws-sdk/global';
 import * as S3 from 'aws-sdk/clients/s3';
+import {RestConstants} from "./rest-constants";
 
 @Injectable()
 export class RestService{
@@ -281,8 +282,8 @@ export class RestService{
 
     const bucket = new S3(
       {
-        accessKeyId: 'AKIAIJVAJSESCK453L2Q',
-        secretAccessKey: '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',
+        accessKeyId: RestConstants.ACCESS_KEY_ID,
+        secretAccessKey: RestConstants.SECRET_ACCESS_KEY,
         region: 'eu-west-2'
       }
     );
