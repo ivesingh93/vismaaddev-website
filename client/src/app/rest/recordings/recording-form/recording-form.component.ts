@@ -239,9 +239,9 @@ export class RecordingFormComponent implements OnInit {
 
 
       if(this.isUploadingShabadsFromLocal){
-        console.log(raagiObj);
-        console.log(this.fileToUpload);
-        this.restService.uploadShabadFile(this.fileToUpload, raagiObj);
+        this.restService.addRaagiRecording(raagiObj)
+          .then(data => this.restService.uploadShabadFile(this.fileToUpload, raagiObj))
+          .catch(error => this.toastrService.error('', 'An error has occurred. Please recheck your submission', this.config));
       }else if(this.editRecording){
         this.restService.addShabadsByRecording(this.selectedRaagi, this.selectedRecording, shabadsObj)
           .then(data => this.toastrService.success('', 'Shabads added successfully!', this.config))
