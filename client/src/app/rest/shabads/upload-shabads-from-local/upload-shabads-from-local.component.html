@@ -1,5 +1,89 @@
 <div class="container-fluid">
   <h1>Upload Shabads From Local</h1>
 
-  <form [formGroup]="uploadShabadsFromLocalForm"
+  <form [formGroup]="uploadShabadsForm" (ngSubmit)="onSubmit()">
+
+    <!-- Raagi -->
+    <div class="form-group">
+      <div class="row">
+
+        <!-- Raagi Name -->
+        <div class="col-md-2">
+          <label for="raagiName">Raagi Name</label>
+          <br>
+          <ng-select
+            id="raagiName"
+            *ngIf="raagiList.length > 0"
+            formControlName="raagiName"
+            placeholder="Select Raagi Name"
+            (selected)="onRaagiSelected($event)"
+            [items]="raagiList">
+          </ng-select>
+        </div>
+
+        <!-- New Raagi Name -->
+        <div class="col-md-2">
+          <div class="form-group" *ngIf="isNewRaagi">
+            <label for="newRaagiName">New Raagi Name</label>
+            <input type="text" class="form-control" id="newRaagiName" formControlName="newRaagiName">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+
+    <!-- Shabads -->
+
+    <!--<div class="form-group">-->
+      <!--<label>Add Shabads</label>-->
+
+      <!--<br>-->
+
+      <!--<div formArrayName="shabads">-->
+        <!--&lt;!&ndash; Shabad index form &ndash;&gt;-->
+        <!--<div *ngFor="let shabad of uploadShabadsForm.controls.shabads.controls; let i = index" class="panel panel-success">-->
+
+          <!--&lt;!&ndash; Remove Shabad Buton &ndash;&gt;-->
+          <!--<div class="panel-heading">-->
+            <!--<span> Shabad {{i+1}}</span>-->
+            <!--<span class="glyphicon glyphicon-remove pull-right"-->
+                  <!--style="color:seagreen" *ngIf="uploadShabadsForm.controls.shabads.controls.length > 1"-->
+                  <!--(click)="onRemoveShabad(i)">-->
+            <!--</span>-->
+          <!--</div>-->
+
+          <!--<div class="panel-body" [formGroupName]="i">-->
+
+            <!--&lt;!&ndash; Shabad Title and New Shabad Title &ndash;&gt;-->
+            <!--<div class="row">-->
+              <!--&lt;!&ndash;Shabad Title&ndash;&gt;-->
+              <!--<div class="col-md-6">-->
+                <!--<label>Shabad Title</label>-->
+                <!--<br>-->
+                <!--<ng-select *ngIf="shabadsList.length > 0" placeholder="Select Shabad Title" formControlName="shabadTitle"-->
+                           <!--(selected)="onShabadSelected($event, i)" [items]="shabadsList"></ng-select>-->
+                <!--<br>-->
+              <!--</div>-->
+
+              <!--&lt;!&ndash;New Shabad Title&ndash;&gt;-->
+              <!--<div class="col-md-6">-->
+                <!--<div class="form-group" *ngIf="selectedShabads[i] === 'Add New Shabad'">-->
+                  <!--<label for="newShabadTitle">New Shabad Title</label>-->
+                  <!--<br>-->
+                  <!--<input type="text" class="form-control" formControlName="newShabadTitle" id="newShabadTitle">-->
+                <!--</div>-->
+              <!--</div>-->
+
+            <!--</div>-->
+          <!--</div>-->
+
+        <!--</div>-->
+      <!--</div>-->
+
+    <!--</div>-->
+
+    <button class="btn btn-primary" type="submit">Submit</button>
+  </form>
 </div>

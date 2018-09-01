@@ -229,6 +229,7 @@ router.get('/shabads/:sathaayi_id/raagis', (req, res) => {
 
 // NOTE - addRaagi and addRecording is now one POST url.
 router.post('/addRaagiRecording', (req, res) =>{
+
     (async () => {
         const client = await initialize_pool().connect();
         // raagi_id = 72, recording_id = 160, shabad_info_id = 418, shabad_id = 417,
@@ -244,10 +245,17 @@ router.post('/addRaagiRecording', (req, res) =>{
             }
             raagi_id = raagi_rows.rows[0].id;
 
-            let recording_rows = await client.query("INSERT INTO RECORDING (TITLE, URL) VALUES ($1, $2) RETURNING ID", [req.body.recordings[0].recording_title, req.body.recordings[0].recording_url]);
-            if(recording_rows.rows.length === 0){
-                recording_rows = await client.query("SELECT ID FROM RECORDING WHERE TITLE=$1", [req.body.recordings[0].recording_title]);
+            let recording_rows;
+
+            if(req.body.recordings[0].recording_url === "no_recording"){
+                recording_rows = await client.query("SELECT ID FROM RECORDING WHERE URL = 'no_recording'");
+            }else{
+                recording_rows = await client.query("INSERT INTO RECORDING (TITLE, URL) VALUES ($1, $2) RETURNING ID", [req.body.recordings[0].recording_title, req.body.recordings[0].recording_url]);
+                if(recording_rows.rows.length === 0){
+                    recording_rows = await client.query("SELECT ID FROM RECORDING WHERE TITLE=$1", [req.body.recordings[0].recording_title]);
+                }
             }
+
             recording_id = recording_rows.rows[0].id;
 
 
@@ -308,6 +316,10 @@ router.post('/uploadRecording', (req, res) => {
     }).pipe(fs.createWriteStream(recording_title + ".mp3"));
 
     stream.on('finish', () => res.json("Recording uploaded!"));
+
+});
+
+router.post('/uploadShabadFromLocal', (req, res) => {
 
 });
 

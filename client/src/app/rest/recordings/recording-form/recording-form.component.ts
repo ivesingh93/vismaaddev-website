@@ -13,6 +13,8 @@ export class RecordingFormComponent implements OnInit {
 
 
   editRecording: boolean = false;
+  isUploadingShabadsFromLocal: boolean = false;
+  fileToUpload: File = null;
 
   raagiNamesList = [];
   recordingTitleList = [];
@@ -133,7 +135,7 @@ export class RecordingFormComponent implements OnInit {
     }else{
       if(!this.editRecording){
         // Add recording
-        let recording_url = this.recordingForm.value.recordingURL;
+        let recording_url = this.isUploadingShabadsFromLocal ? "no_recording" : this.recordingForm.value.recordingURL;
 
         // Get final raagi name, whether existing from a list or a new one.
         for(let i = 0; i < this.getRaagiName().length; i++){
@@ -167,6 +169,13 @@ export class RecordingFormComponent implements OnInit {
             recording_url: recording_url,
             shabads: []
           });
+        }else if(recording_url === "no_recording"){
+          raagiObj['recordings'].push({
+            recording_title: recording_url,
+            recording_date: new Date(),
+            recording_url: recording_url,
+            shabads: []
+          })
         }
       }
 
@@ -229,16 +238,20 @@ export class RecordingFormComponent implements OnInit {
       }
 
 
-      if(this.editRecording){
+      if(this.isUploadingShabadsFromLocal){
+        this.restService.addRaagiRecording(raagiObj)
+          .then(data => this.restService.uploadShabadFile(this.fileToUpload, raagiObj))
+          .catch(error => this.toastrService.error('', 'An error has occurred. Please recheck your submission', this.config));
+      }else if(this.editRecording){
         this.restService.addShabadsByRecording(this.selectedRaagi, this.selectedRecording, shabadsObj)
           .then(data => this.toastrService.success('', 'Shabads added successfully!', this.config))
-          .catch(error => this.toastrService.error('', 'Oopss! An error has occurred. Please recheck your submission', this.config));
+          .catch(error => this.toastrService.error('', 'An error has occurred. Please recheck your submission', this.config));
       }else{
 
         if(newRaagi){
           this.restService.addRaagiRecording(raagiObj)
             .then(data => this.toastrService.success('', 'Raagi Added Successfully!', this.config))
-            .catch(error => this.toastrService.error('', 'Oopss! An error has occurred. Please recheck your submission', this.config));
+            .catch(error => this.toastrService.error('', 'An error has occurred. Please recheck your submission', this.config));
         }else{
           this.restService.addRaagiRecording(raagiObj)
             .then(data => this.toastrService.success('', 'Recording Added Successfully!', this.config))
@@ -261,8 +274,18 @@ export class RecordingFormComponent implements OnInit {
     }
   }
 
-  onEditRecording(value){
-      this.editRecording = value;
+  onEditRecording(){
+    this.editRecording = !this.editRecording;
+    this.isUploadingShabadsFromLocal = false;
+  }
+
+  onUploadingShabadsFromLocal(){
+    this.isUploadingShabadsFromLocal = !this.isUploadingShabadsFromLocal;
+    this.editRecording = false;
+  }
+
+  handleFileInput(files: FileList) {
+    this.fileToUpload = files.item(0);
   }
 
   // When sathayi is selected, process starting lines array.
@@ -433,13 +456,20 @@ export class RecordingFormComponent implements OnInit {
         message = "Please select a Recording Title to edit. ";
       }else {
         let recordingURL = this.recordingForm.value.recordingURL;
-        if(!this.editRecording && ((recordingURL === null) || (recordingURL === "") || (!recordingURL.endsWith(".mp3")))) {
+
+        if(this.isUploadingShabadsFromLocal){
+          recordingURL = "no_recording";
+        }
+
+        if(!this.editRecording && !this.isUploadingShabadsFromLocal && ((recordingURL === null) || (recordingURL === "")
+          || (!recordingURL.endsWith(".mp3")))) {
           message = "Please recheck the Recording URL field. Make sure the link starts with either http://www.gurmatsagar.com/ or http://new.sgpc.net" +
             " or http://www.gurmatveechar.com/ and ends with .mp3. ";
+          console.log(recordingURL);
         }else{
 
-
-          if(this.editRecording && recordingURL == null){
+          console.log(recordingURL);
+          if((this.editRecording && recordingURL == null) || (recordingURL === "no_recording")){
             if(this.recordingForm.value.shabads[0].shabadTitle === null){
               message = "Please select a Shabad Title or select Add New Shabad from Shabad 1. ";
             }else {
@@ -504,6 +534,7 @@ export class RecordingFormComponent implements OnInit {
               }
             }
           }else{
+            console.log(recordingURL);
             message = "Please recheck the Recording URL field. Make sure the link starts with either http://www.gurmatsagar.com/ or http://new.sgpc.net" +
               " or http://www.gurmatveechar.com and ends with .mp3. ";
           }
@@ -518,11 +549,11 @@ export class RecordingFormComponent implements OnInit {
     let message = "";
     if(this.recordingForm.value.shabads[index].shabadStartingTime === null
       || this.recordingForm.value.shabads[index].shabadStartingTime === ""){
-      message = "Please enter the Shabad Starting Time ";
+        message = "Please enter the Shabad Starting Time ";
     }else{
       if(this.recordingForm.value.shabads[index].shabadEndingTime === null
         || this.recordingForm.value.shabads[index].shabadEndingTime === ""){
-        message = "Please enter the Shabad Ending Time ";
+          message = "Please enter the Shabad Ending Time ";
       }else{
         if(this.recordingForm.value.shabads[index].shabadTitle[0].text === "Add New Shabad"){
           if(this.recordingForm.value.shabads[index].initials === null
@@ -599,6 +630,7 @@ export class RecordingFormComponent implements OnInit {
       newShabadTitle: new FormControl(null),
       shabadUrl: new FormControl(null),
       initials: new FormControl(null),
+      fileName: new FormControl(null),
       shabadStartingTime: new FormControl(null),
       shabadEndingTime: new FormControl(null),
       sathaayiId: new FormControl(null),

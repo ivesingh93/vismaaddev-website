@@ -1,6 +1,10 @@
 import {Injectable} from '@angular/core';
 import {Http, Response, Headers, RequestOptions} from '@angular/http';
 import 'rxjs/add/operator/toPromise';
+import * as AWS from 'aws-sdk/global';
+import * as S3 from 'aws-sdk/clients/s3';
+import {RestConstants} from "./rest-constants";
+import {ToastConfig, ToastrService} from "ngx-toastr";
 
 @Injectable()
 export class RestService{
@@ -33,7 +37,16 @@ export class RestService{
   private GET_RECENT_RECORDINGS = this.LOCALHOST + "/api/raagiRoutes/recentRecordings";
   private GET_SHABADS_RECORDING = this.LOCALHOST + "/api/raagiRoutes/recordings";
   private GET_SHABAD_THEMES = this.LOCALHOST + "/api/raagiRoutes/shabads/";
-  constructor(private http: Http){}
+
+  config: ToastConfig = {
+    positionClass: 'toast-bottom-full-width',
+    tapToDismiss: true,
+    timeOut: 7000,
+    extendedTimeOut: 20000,
+    closeButton: true
+  };
+
+  constructor(private http: Http, private toastrService: ToastrService){}
 
   addRaagiRecording(raagi_obj){
     let headers = new Headers({ 'Content-Type': 'application/json' });
@@ -268,6 +281,29 @@ export class RestService{
       .toPromise()
       .then(this.extractData)
       .catch(this.handleError);
+  }
+
+  uploadShabadFile(file, raagiObj) {
+    let key = "Raagis/" + raagiObj.raagi_name + "/" + raagiObj['recordings'][0]['shabads'][0].shabad_english_title + ".mp3";
+    const bucket = new S3({
+        accessKeyId: RestConstants.ACCESS_KEY_ID,
+        secretAccessKey: RestConstants.SECRET_ACCESS_KEY,
+        region: 'eu-west-2'
+      });
+    const params = {
+      Bucket: 'vismaadnaad',
+      Key: key,
+      Body: file,
+      ACL:'public-read',
+      ContentType: "audio/mpeg"
+    };
+
+    return bucket.putObject(params, (err, data) => {
+      if (err) {
+        this.toastrService.error('', 'An error has occurred. Please recheck your submission', this.config)
+      }
+      this.toastrService.success('', 'Shabads added successfully!', this.config)
+    });
   }
 
   private extractData(responseSerialized: Response): Promise<any>{
