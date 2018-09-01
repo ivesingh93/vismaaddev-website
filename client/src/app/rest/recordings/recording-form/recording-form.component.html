@@ -36,7 +36,8 @@
 
     <!-- Edit Recording? -->
     <div class="form-group" *ngIf="selectedRaagi !== 'Add New Raagi' && selectedRaagi !== ''">
-      <mat-checkbox (change)="onEditRecording($event.checked)">Edit a Recording</mat-checkbox>
+      <mat-checkbox [checked]="editRecording" (change)="onEditRecording()">Edit a Recording</mat-checkbox>
+      <mat-checkbox [checked]="isUploadingShabadsFromLocal" (change)="onUploadingShabadsFromLocal()">Upload Shabads From Local</mat-checkbox>
     </div>
 
     <!--Recording Title-->
@@ -54,7 +55,7 @@
     </div>
 
     <!-- Recording URL -->
-    <div class="form-group" *ngIf="!editRecording">
+    <div class="form-group" *ngIf="!editRecording && !isUploadingShabadsFromLocal">
       <label for="recordingURL">Recording URL</label>
       <br>
       <input type="text" class="form-control" id="recordingURL" formControlName="recordingURL"
@@ -148,6 +149,18 @@
 
               </div>
 
+            </div>
+
+            <div class="row">
+              <!--Upload Shabad Button-->
+              <div class="col-md-3" *ngIf="isUploadingShabadsFromLocal">
+                <div *ngIf="selectedShabads[i] === 'Add New Shabad'">
+                  <br><br>
+                </div>
+                <label class="btn btn-default">
+                  <input type="file" id="file" (change)="handleFileInput($event.target.files)">
+                </label>
+              </div>
             </div>
 
             <!--Select Shabad Sathaayi-->
