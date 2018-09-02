@@ -87,8 +87,8 @@ router.get('/shabads/:sathaayi_id', (req, res) => {
     client.connect();
     const query = {
         text: "select shabad.id, shabad.sathaayi_title as shabad_english_title, shabad.shabad_info_id, shabad_info.sathaayi_id, " +
-        "shabad_info.starting_id, shabad_info.ending_id, shabad_info.checked from shabad join shabad_info on shabad.shabad_info_id = shabad_info.id " +
-        "where shabad_info.sathaayi_id=$1 order by shabad.sathaayi_title",
+            "shabad_info.starting_id, shabad_info.ending_id, shabad_info.checked from shabad join shabad_info on shabad.shabad_info_id = shabad_info.id " +
+            "where shabad_info.sathaayi_id=$1 order by shabad.sathaayi_title",
         values: [sathaayi_id]
     };
     client.query(query, (err, sqlResponse) => {
@@ -126,7 +126,7 @@ router.get('/raagis/:raagi_name/recordings', (req, res) =>{
     client.connect();
     let query = {
         text: "select distinct recording.title as recording_title from raagi_recording_shabad as rrs join recording on rrs.recording_id=recording.id " +
-        "where raagi_id=(SELECT ID from raagi where name=$1) order by recording.title",
+            "where raagi_id=(SELECT ID from raagi where name=$1) order by recording.title",
         values: [req.params.raagi_name]
     };
     client.query(query, (err, sqlResponse) => {
@@ -144,7 +144,7 @@ router.get('/raagis/:raagi_name/recordingsInfo', (req, res) =>{
     client.connect();
     let query = {
         text: "select distinct recording.title as recording_title, recording.url as recording_url, recording.date_added from raagi_recording_shabad as rrs join recording on rrs.recording_id=recording.id " +
-        "where raagi_id=(SELECT ID from raagi where name=$1) order by recording.title",
+            "where raagi_id=(SELECT ID from raagi where name=$1) order by recording.title",
         values: [req.params.raagi_name]
     };
     client.query(query, (err, sqlResponse) => {
@@ -159,11 +159,11 @@ router.get('/raagis/:raagi_name/shabads', (req, res) => {
     client.connect();
     let query = {
         text: "select rrs.id, raagi.name as raagi_name, shabad.sathaayi_title as shabad_english_title, recording.title as recording_title, shabad_info.sathaayi_id, " +
-        "concat('https://s3.eu-west-2.amazonaws.com/vismaadnaad/Raagis/',raagi.name, '/', shabad.sathaayi_title, '.mp3') as shabad_url, " +
-        "shabad_info.starting_id, shabad_info.ending_id, to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.checked as shabad_checked " +
-        "from raagi_recording_shabad as rrs join shabad on rrs.shabad_id = shabad.id join shabad_info on shabad.shabad_info_id = shabad_info.id " +
-        "join raagi on rrs.raagi_id = raagi.id join recording on rrs.recording_id = recording.id " +
-        "where rrs.raagi_id=(select id from raagi where name=$1) and rrs.status='PROD' order by shabad.sathaayi_title",
+            "concat('https://s3.eu-west-2.amazonaws.com/vismaadnaad/Raagis/',raagi.name, '/', shabad.sathaayi_title, '.mp3') as shabad_url, " +
+            "shabad_info.starting_id, shabad_info.ending_id, to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.checked as shabad_checked " +
+            "from raagi_recording_shabad as rrs join shabad on rrs.shabad_id = shabad.id join shabad_info on shabad.shabad_info_id = shabad_info.id " +
+            "join raagi on rrs.raagi_id = raagi.id join recording on rrs.recording_id = recording.id " +
+            "where rrs.raagi_id=(select id from raagi where name=$1) and rrs.status='PROD' order by shabad.sathaayi_title",
         values: [req.params.raagi_name]
     };
     client.query(query, (err, sqlResponse) => {
@@ -177,13 +177,13 @@ router.get('/raagis/:raagi_name/recordings/:recording_title/shabads', (req, res)
     client.connect();
     let query = {
         text: "select shabad.sathaayi_title as shabad_english_title, recording.title as recording_title, shabad_info.sathaayi_id, " +
-        "shabad_info.starting_id, rrs.starting_time as shabad_starting_time, rrs.ending_time as shabad_ending_time, " +
-        "shabad_info.ending_id, to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.checked as shabad_checked " +
-        "from raagi_recording_shabad as rrs " +
-        "join shabad on rrs.shabad_id = shabad.id " +
-        "join shabad_info on shabad.shabad_info_id = shabad_info.id " +
-        "join recording on rrs.recording_id = recording.id " +
-        "where rrs.raagi_id=(select id from raagi where name = $1) and recording.title=$2 order by shabad.sathaayi_title",
+            "shabad_info.starting_id, rrs.starting_time as shabad_starting_time, rrs.ending_time as shabad_ending_time, " +
+            "shabad_info.ending_id, to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.checked as shabad_checked " +
+            "from raagi_recording_shabad as rrs " +
+            "join shabad on rrs.shabad_id = shabad.id " +
+            "join shabad_info on shabad.shabad_info_id = shabad_info.id " +
+            "join recording on rrs.recording_id = recording.id " +
+            "where rrs.raagi_id=(select id from raagi where name = $1) and recording.title=$2 order by shabad.sathaayi_title",
         values: [req.params.raagi_name, req.params.recording_title]
     };
     client.query(query, (err, sqlResponse) => {
@@ -214,7 +214,7 @@ router.get('/shabads/:sathaayi_id/raagis', (req, res) => {
     client.connect();
     let query = {
         text: "select raagi.name as raagi_name from shabad join raagi_recording_shabad as rrs on shabad.id = rrs.shabad_id " +
-        "join raagi on raagi.id = rrs.raagi_id where shabad.shabad_info_id = (select id from shabad_info where sathaayi_id = $1)",
+            "join raagi on raagi.id = rrs.raagi_id where shabad.shabad_info_id = (select id from shabad_info where sathaayi_id = $1)",
         values: [req.params.sathaayi_id]
     };
     client.query(query, (err, sqlResponse) => {
@@ -224,6 +224,41 @@ router.get('/shabads/:sathaayi_id/raagis', (req, res) => {
         }
         res.send(raagi_names);
         client.end();
+    });
+});
+
+router.post('/shabadListeners', (req, res) => {
+    console.log(req);
+    let client = initialize_client();
+    client.connect();
+
+    client.query("update raagi_recording_shabad set listeners = listeners + 1 where id = $1 returning listeners", [req.body.id], (err, sqlRes) => {
+        if(err){
+            console.log(err);
+            res.json({
+                "ResponseCode": 400,
+                "Result": "Failure"
+            });
+        }else{
+            res.json(sqlRes.rows[0])
+        }
+    });
+});
+
+router.get('/shabadListeners/:id', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+
+    client.query("select listeners from raagi_recording_shabad as rrs where rrs.id = $1", [req.params.id], (err, sqlResponse) => {
+        if(err){
+            console.log(err);
+            res.json({
+                "ResponseCode": 400,
+                "Result": "Failure"
+            });
+        }else{
+            res.json(sqlResponse.rows[0]);
+        }
     });
 });
 
