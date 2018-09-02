@@ -227,6 +227,24 @@ router.get('/shabads/:sathaayi_id/raagis', (req, res) => {
     });
 });
 
+router.get('/recentRaagis', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    let query = {
+        text: "select distinct raagi.name as raagi_name from raagi_recording_shabad as rrs join raagi on raagi.id = rrs.raagi_id " +
+            "where rrs.date_added between (now() - interval '7 day') and now()",
+        values: []
+    };
+    client.query(query, (err, sqlResponse) => {
+        let raagi_names = [];
+        for(let row of sqlResponse.rows){
+            raagi_names.push(row.raagi_name);
+        }
+        res.send(raagi_names);
+        client.end();
+    });
+});
+
 router.post('/shabadListeners', (req, res) => {
     console.log(req);
     let client = initialize_client();
