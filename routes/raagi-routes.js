@@ -245,6 +245,56 @@ router.get('/recentRaagis', (req, res) => {
     });
 });
 
+router.get('/shabadListeners/:id', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+
+    client.query("select listeners from raagi_recording_shabad as rrs where rrs.id = $1", [req.params.id], (err, sqlResponse) => {
+        if(err){
+            console.log(err);
+            res.json({
+                "ResponseCode": 400,
+                "Result": "Failure"
+            });
+        }else{
+            res.json(sqlResponse.rows[0]);
+        }
+    });
+});
+
+router.get('/recentTutorials/limit/:limit', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    let limit = req.params.limit;
+    let query;
+    if(limit === "all"){
+        query = {
+            text: "select shabad_tutorial.url, shabad_tutorial.title, shabad_tutorial.harmonium_scale, shabad_tutor.name " +
+                    "from shabad_tutorial join shabad_tutor on shabad_tutorial.shabad_tutor_id = shabad_tutor.id " +
+                "order by shabad_tutorial.date_added desc",
+            values: []
+        }
+    }else{
+        query = {
+            text: "select shabad_tutorial.url, shabad_tutorial.title, shabad_tutorial.harmonium_scale, shabad_tutor.name " +
+                    "from shabad_tutorial join shabad_tutor on shabad_tutorial.shabad_tutor_id = shabad_tutor.id " +
+                "order by shabad_tutorial.date_added desc limit $1",
+            values: [limit]
+        }
+    }
+    client.query(query, (err, sqlResponse) => {
+        if(err){
+            console.log(err);
+            res.json({
+                "ResponseCode": 400,
+                "Result": "Failure"
+            });
+        }else{
+            res.json(sqlResponse.rows);
+        }
+    });
+});
+
 router.post('/shabadListeners', (req, res) => {
     console.log(req);
     let client = initialize_client();
@@ -259,23 +309,6 @@ router.post('/shabadListeners', (req, res) => {
             });
         }else{
             res.json(sqlRes.rows[0])
-        }
-    });
-});
-
-router.get('/shabadListeners/:id', (req, res) => {
-    let client = initialize_client();
-    client.connect();
-
-    client.query("select listeners from raagi_recording_shabad as rrs where rrs.id = $1", [req.params.id], (err, sqlResponse) => {
-        if(err){
-            console.log(err);
-            res.json({
-                "ResponseCode": 400,
-                "Result": "Failure"
-            });
-        }else{
-            res.json(sqlResponse.rows[0]);
         }
     });
 });
