@@ -34,6 +34,8 @@ export class RecordingFormComponent implements OnInit {
   startingLines = [];
   endingLines = [];
 
+  selectedShabadSathaayiTitles = [];
+
   recordingURLAlert = "";
 
   config: ToastConfig = {
@@ -239,6 +241,8 @@ export class RecordingFormComponent implements OnInit {
 
 
       if(this.isUploadingShabadsFromLocal){
+        raagiObj.recordings[0].shabads[0]['status'] = "PROD";
+        console.log(raagiObj);
         this.restService.addRaagiRecording(raagiObj)
           .then(data => this.restService.uploadShabadFile(this.fileToUpload, raagiObj))
           .catch(error => this.toastrService.error('', 'An error has occurred. Please recheck your submission', this.config));
@@ -289,8 +293,7 @@ export class RecordingFormComponent implements OnInit {
   }
 
   // When sathayi is selected, process starting lines array.
-  onLineSelected(value: any, index){
-    let componentThis = this;
+  onLineSelected(value: any){
     let sathaayi_id = value.id;
     let selected = {
       id: sathaayi_id,
@@ -310,59 +313,29 @@ export class RecordingFormComponent implements OnInit {
 
     // If shabad by this sathaayi_id already exists then no need to enter the New Shabad Title or select starting/ending pankti.
     this.restService.getShabadBySathaayiID(sathaayi_id)
-      .then(function(data){
+      .then(data => {
 
+        /*
+            If the selected shabad sathaayi id is not found in the database (shabad_info table) then do either of the following:
+              1. If the selected shabad sathaayi id has kirtan id (is a kirtan shabad) then just pull those lines
+              2. If the selected shabad sathaayi id does not have kirtan id then just pull 20 lines before and after the selected shabad sathaayi
+
+            If the selected shabad sathaayi id is found in the database then this means this shabad sathaayi id already has title(s). If so, then:
+              Show the list of titles that are under this shabad id and the admin can pick one from the given dropdown or proceed with a new title.
+
+         */
         if(data === "Shabad not found"){
-          //If the selected line or sathayi has Kirtan ID, then grab just those lines.
-          if(kirtan_id !== null){
-            componentThis.restService.getShabadLines(kirtan_id)
-              .then(function(data){
-                componentThis.processStartingLines(selected, data);
-
-              })
-              .catch(error => console.log(error));
-          }else{
-            // Otherwise, grab the lines within the range.
-
-            componentThis.restService.getRangeLines(selected.from, selected.to)
-              .then(function(data){
-                componentThis.processStartingLines(selected, data);
-              })
-              .catch(error => console.log(error));
-          }
+          this.selectedShabadSathaayiTitles = [];
+          this.prepareLines(kirtan_id, selected);
         }else{
-          let shabad_english_title = data.shabad_english_title;
-
-          componentThis.restService.getShabadBySathaayiTitle(data[0].shabad_english_title)
-            .then(function(data){
-              if(data == "Shabad not found"){
-                //If the selected line or sathayi has Kirtan ID, then grab just those lines.
-                if(kirtan_id !== null){
-                  componentThis.restService.getShabadLines(kirtan_id)
-                    .then(function(data){
-                      componentThis.processStartingLines(selected, data);
-
-                    })
-                    .catch(error => console.log(error));
-                }else{
-                  // Otherwise, grab the lines within the range.
-
-                  componentThis.restService.getRangeLines(selected.from, selected.to)
-                    .then(function(data){
-                      componentThis.processStartingLines(selected, data);
-                    })
-                    .catch(error => console.log(error));
-                }
-              }else{
-                componentThis.startingLines = [];
-                componentThis.endingLines = [];
-                componentThis.toastrService.warning('', shabad_english_title + " shabad found! Please select the shabad from Shabad Title.", componentThis.config);
-              }
+          data.map(shabad => {
+            this.selectedShabadSathaayiTitles = [];
+            this.selectedShabadSathaayiTitles.push(shabad.shabad_english_title);
           });
+          this.prepareLines(kirtan_id, selected);
         }
       })
       .catch(error => console.log(error));
-
 
   }
 
@@ -429,6 +402,25 @@ export class RecordingFormComponent implements OnInit {
         }
       }
 
+    }
+  }
+
+  private prepareLines(kirtan_id: number, selected){
+    //If the selected line or sathayi has Kirtan ID, then grab just those lines.
+    if(kirtan_id !== null){
+      this.restService.getShabadLines(kirtan_id)
+        .then(data => {
+          this.processStartingLines(selected, data);
+        })
+        .catch(error => console.log(error));
+    }else{
+      // Otherwise, grab the lines within the range.
+
+      this.restService.getRangeLines(selected.from, selected.to)
+        .then(data => {
+          this.processStartingLines(selected, data);
+        })
+        .catch(error => console.log(error));
     }
   }
 

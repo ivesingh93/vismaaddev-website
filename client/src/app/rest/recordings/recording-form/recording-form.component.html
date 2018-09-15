@@ -175,6 +175,18 @@
               </ng-select>
             </div>
 
+            <br>
+
+
+            <mat-form-field *ngIf="selectedShabadSathaayiTitles.length > 0">
+              <label>Already existed shabad titles of this pankti: </label>
+                <mat-chip-list>
+                  <mat-chip *ngFor="let sst of selectedShabadSathaayiTitles">
+                    {{sst}}
+                  </mat-chip>
+                </mat-chip-list>
+            </mat-form-field>
+
             <!--Select Starting Pankti-->
             <div *ngIf="startingLines.length > 0 && selectedShabads[i] === 'Add New Shabad'">
               <br>

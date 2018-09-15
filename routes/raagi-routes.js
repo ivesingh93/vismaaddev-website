@@ -104,10 +104,10 @@ router.get('/shabads/:sathaayi_id', (req, res) => {
 
 router.get('/shabads/sathaayi_title/:sathaayi_title', (req, res) => {
     let client = initialize_client();
-    let sathaayi_title = parseInt(req.params.sathaayi_title);
+    let sathaayi_title = req.params.sathaayi_title;
     client.connect();
     const query = {
-        text: "select * from shabad where sathaayi_title=$1",
+        text: "select * from shabad where sathaayi_title = $1",
         values: [sathaayi_title]
     };
     client.query(query, (err, sqlResponse) => {
@@ -158,7 +158,8 @@ router.get('/raagis/:raagi_name/shabads', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "select rrs.id, raagi.name as raagi_name, shabad.sathaayi_title as shabad_english_title, recording.title as recording_title, shabad_info.sathaayi_id, " +
+        text: "select rrs.id, raagi.name as raagi_name, shabad.sathaayi_title as shabad_english_title, " +
+            "rrs.listeners, recording.title as recording_title, shabad_info.sathaayi_id, " +
             "concat('https://s3.eu-west-2.amazonaws.com/vismaadnaad/Raagis/',raagi.name, '/', shabad.sathaayi_title, '.mp3') as shabad_url, " +
             "shabad_info.starting_id, shabad_info.ending_id, to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.checked as shabad_checked " +
             "from raagi_recording_shabad as rrs join shabad on rrs.shabad_id = shabad.id join shabad_info on shabad.shabad_info_id = shabad_info.id " +
@@ -267,18 +268,30 @@ router.get('/recentTutorials/limit/:limit', (req, res) => {
     client.connect();
     let limit = req.params.limit;
     let query;
+
     if(limit === "all"){
         query = {
-            text: "select shabad_tutorial.url, shabad_tutorial.title, shabad_tutorial.harmonium_scale, shabad_tutor.name " +
-                    "from shabad_tutorial join shabad_tutor on shabad_tutorial.shabad_tutor_id = shabad_tutor.id " +
+            text: "select shabad_tutorial.url, shabad_tutorial.title, shabad_tutorial.harmonium_scale, \n" +
+                "shabad_tutor.name as shabad_tutor, shabad.sathaayi_title, raagi.name as raagi_name\n" +
+                "from shabad_tutorial\n" +
+                "join shabad_tutor on shabad_tutorial.shabad_tutor_id = shabad_tutor.id\n" +
+                "join raagi_recording_shabad as rrs on rrs.id = shabad_tutorial.raagi_recording_shabad_id\n" +
+                "join shabad on rrs.shabad_id = shabad.id\n" +
+                "join raagi on rrs.raagi_id = raagi.id\n" +
                 "order by shabad_tutorial.date_added desc",
             values: []
         }
     }else{
         query = {
-            text: "select shabad_tutorial.url, shabad_tutorial.title, shabad_tutorial.harmonium_scale, shabad_tutor.name " +
-                    "from shabad_tutorial join shabad_tutor on shabad_tutorial.shabad_tutor_id = shabad_tutor.id " +
-                "order by shabad_tutorial.date_added desc limit $1",
+            text: "select shabad_tutorial.url, shabad_tutorial.title, shabad_tutorial.harmonium_scale, \n" +
+                "shabad_tutor.name as shabad_tutor, shabad.sathaayi_title, raagi.name as raagi_name\n" +
+                "from shabad_tutorial\n" +
+                "join shabad_tutor on shabad_tutorial.shabad_tutor_id = shabad_tutor.id\n" +
+                "join raagi_recording_shabad as rrs on rrs.id = shabad_tutorial.raagi_recording_shabad_id\n" +
+                "join shabad on rrs.shabad_id = shabad.id\n" +
+                "join raagi on rrs.raagi_id = raagi.id\n" +
+                "order by shabad_tutorial.date_added desc \n" +
+                "limit $1",
             values: [limit]
         }
     }
@@ -300,7 +313,7 @@ router.post('/shabadListeners', (req, res) => {
     let client = initialize_client();
     client.connect();
 
-    client.query("update raagi_recording_shabad set listeners = listeners + 1 where id = $1 returning listeners", [req.body.id], (err, sqlRes) => {
+    client.query("update raagi_recording_shabad set listeners = listeners + 1 where id = $1", [req.body.id], (err, sqlRes) => {
         if(err){
             console.log(err);
             res.json({
@@ -308,13 +321,17 @@ router.post('/shabadListeners', (req, res) => {
                 "Result": "Failure"
             });
         }else{
-            res.json(sqlRes.rows[0])
+            res.json({
+                "ResponseCode": 400,
+                "Result": "Success"
+            })
         }
     });
 });
 
 // NOTE - addRaagi and addRecording is now one POST url.
 router.post('/addRaagiRecording', (req, res) =>{
+
 
     (async () => {
         const client = await initialize_pool().connect();
@@ -346,8 +363,13 @@ router.post('/addRaagiRecording', (req, res) =>{
 
 
             for(let shabad of req.body.recordings[0].shabads){
-                let starting_time, ending_time;
+                let starting_time, ending_time, status;
 
+                if(shabad.hasOwnProperty('status')){
+                    status = "PROD";
+                }else{
+                    status = "DEV";
+                }
                 if(shabad.shabad_starting_time.length === 4){
                     starting_time = shabad.shabad_starting_time.slice(0, 2) + ":" + shabad.shabad_starting_time.slice(2,4);
                 }else{
@@ -378,7 +400,7 @@ router.post('/addRaagiRecording', (req, res) =>{
                 shabad_id = shabad_rows.rows[0].id;
 
                 await client.query("INSERT INTO RAAGI_RECORDING_SHABAD (RAAGI_ID, RECORDING_ID, SHABAD_ID, STARTING_TIME, ENDING_TIME, LENGTH, STATUS) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-                    [raagi_id, recording_id, shabad_id, starting_time, ending_time, shabad_length, "DEV"]);
+                    [raagi_id, recording_id, shabad_id, starting_time, ending_time, shabad_length, status]);
             }
 
             await client.query('COMMIT');
@@ -402,10 +424,6 @@ router.post('/uploadRecording', (req, res) => {
     }).pipe(fs.createWriteStream(recording_title + ".mp3"));
 
     stream.on('finish', () => res.json("Recording uploaded!"));
-
-});
-
-router.post('/uploadShabadFromLocal', (req, res) => {
 
 });
 

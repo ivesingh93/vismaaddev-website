@@ -12,7 +12,7 @@ import { RecordingsComponent } from './rest/recordings/recordings.component';
 import {NgbModule} from '@ng-bootstrap/ng-bootstrap';
 
 import {RestService} from './rest/shared/rest.service';
-import {MatTabsModule} from '@angular/material';
+import {MatChipsModule, MatTabsModule} from '@angular/material';
 
 import { DatePickerModule } from 'ng2-datepicker';
 import { SelectModule } from 'ng2-select';
@@ -74,6 +74,7 @@ const appRoutes: Routes = [
     NgbModule.forRoot(),
     MatTabsModule,
     MatListModule,
+    MatChipsModule,
     MatCheckboxModule
   ],
   providers: [RestService, KathaService],
