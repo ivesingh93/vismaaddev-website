@@ -6,12 +6,13 @@ const fs = require('fs');
 const child_process = require('child_process');
 const { Pool, Client } = require('pg');
 const config = require('../config/database');
+const queries = require('../config/queries');
 
 router.get('/raagiNames', (req, res) =>{
     let client = initialize_client();
     client.connect();
     let raagi_names = [];
-    client.query("select name from raagi order by name", (err, sqlResponse) => {
+    client.query(queries.RAAGI_NAMES, (err, sqlResponse) => {
         for(let raagi of sqlResponse.rows){
             raagi_names.push(raagi.name);
         }
@@ -24,7 +25,7 @@ router.get('/recordingURLs', (req, res) =>{
     let client = initialize_client();
     client.connect();
     let recording_urls = [];
-    client.query("select url from recording order by url", (err, sqlResponse) => {
+    client.query(queries.RECORDING_URLS, (err, sqlResponse) => {
         for(let rec_url of sqlResponse.rows){
             recording_urls.push(rec_url.url);
         }
@@ -37,7 +38,7 @@ router.get('/recentRecordings', (req, res) => {
     let client = initialize_client();
     client.connect();
     let recent_recordings = [];
-    client.query("select title from recording order by date_added desc limit 20", (err, sqlResponse) => {
+    client.query(queries.RECENT_RECORDINGS, (err, sqlResponse) => {
         for(let row of sqlResponse.rows){
             recent_recordings.push(row.title);
         }
@@ -49,9 +50,7 @@ router.get('/recentRecordings', (req, res) => {
 router.get('/raagi_info', (req, res) => {
     let client = initialize_client();
     client.connect();
-    const query = "select row_number() over(order by raagi.name) as raagi_id, raagi.name as raagi_name, raagi.image_url as raagi_image_url, " +
-        "count(rrs.shabad_id) as shabads_count, to_char(sum(rrs.length), 'HH24:MI:SS') as total_length " +
-        "from raagi join raagi_recording_shabad as rrs ON raagi.id=rrs.raagi_id where rrs.status = 'PROD' group by raagi.id";
+    const query = queries.RAAGI_INFO;
     client.query(query, (err, sqlResponse) => {
         let raagis_info = [];
         for(let raagi of sqlResponse.rows){
@@ -72,23 +71,19 @@ router.get('/raagi_info', (req, res) => {
 router.get('/shabads', (req, res) => {
     let client = initialize_client();
     client.connect();
-    let query = "select shabad.sathaayi_title as shabad_english_title, shabad_info.sathaayi_id, shabad_info.starting_id, shabad_info.ending_id, shabad_info.checked as shabad_checked " +
-        "from shabad join shabad_info on shabad.shabad_info_id = shabad_info.id order by shabad.sathaayi_title";
+    let query = queries.SHABADS;
     client.query(query, (err, sqlResponse) => {
         res.send(sqlResponse.rows);
         client.end();
     });
 });
 
-// TODO - Test if this can return multiple rows with same sathaayi_id. For example, what if the same sathaayi_id has more than one sathaayi_title?
 router.get('/shabads/:sathaayi_id', (req, res) => {
     let client = initialize_client();
     let sathaayi_id = parseInt(req.params.sathaayi_id);
     client.connect();
     const query = {
-        text: "select shabad.id, shabad.sathaayi_title as shabad_english_title, shabad.shabad_info_id, shabad_info.sathaayi_id, " +
-            "shabad_info.starting_id, shabad_info.ending_id, shabad_info.checked from shabad join shabad_info on shabad.shabad_info_id = shabad_info.id " +
-            "where shabad_info.sathaayi_id=$1 order by shabad.sathaayi_title",
+        text: queries.SHABADS_BY_SATHAAYI_ID,
         values: [sathaayi_id]
     };
     client.query(query, (err, sqlResponse) => {
@@ -107,7 +102,7 @@ router.get('/shabads/sathaayi_title/:sathaayi_title', (req, res) => {
     let sathaayi_title = req.params.sathaayi_title;
     client.connect();
     const query = {
-        text: "select * from shabad where sathaayi_title = $1",
+        text: queries.SHABADS_BY_SATHAAYI_TITLE,
         values: [sathaayi_title]
     };
     client.query(query, (err, sqlResponse) => {
@@ -125,8 +120,7 @@ router.get('/raagis/:raagi_name/recordings', (req, res) =>{
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "select distinct recording.title as recording_title from raagi_recording_shabad as rrs join recording on rrs.recording_id=recording.id " +
-            "where raagi_id=(SELECT ID from raagi where name=$1) order by recording.title",
+        text: queries.RAAGIS_RECORDINGS,
         values: [req.params.raagi_name]
     };
     client.query(query, (err, sqlResponse) => {
@@ -143,8 +137,7 @@ router.get('/raagis/:raagi_name/recordingsInfo', (req, res) =>{
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "select distinct recording.title as recording_title, recording.url as recording_url, recording.date_added from raagi_recording_shabad as rrs join recording on rrs.recording_id=recording.id " +
-            "where raagi_id=(SELECT ID from raagi where name=$1) order by recording.title",
+        text: queries.RAAGIS_RECORDINGS_INFO,
         values: [req.params.raagi_name]
     };
     client.query(query, (err, sqlResponse) => {
@@ -158,13 +151,7 @@ router.get('/raagis/:raagi_name/shabads', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "select rrs.id, raagi.name as raagi_name, shabad.sathaayi_title as shabad_english_title, " +
-            "rrs.listeners, recording.title as recording_title, shabad_info.sathaayi_id, " +
-            "concat('https://s3.eu-west-2.amazonaws.com/vismaadnaad/Raagis/',raagi.name, '/', shabad.sathaayi_title, '.mp3') as shabad_url, " +
-            "shabad_info.starting_id, shabad_info.ending_id, to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.checked as shabad_checked " +
-            "from raagi_recording_shabad as rrs join shabad on rrs.shabad_id = shabad.id join shabad_info on shabad.shabad_info_id = shabad_info.id " +
-            "join raagi on rrs.raagi_id = raagi.id join recording on rrs.recording_id = recording.id " +
-            "where rrs.raagi_id=(select id from raagi where name=$1) and rrs.status='PROD' order by shabad.sathaayi_title",
+        text: queries.RAAGIS_SHABADS,
         values: [req.params.raagi_name]
     };
     client.query(query, (err, sqlResponse) => {
@@ -177,14 +164,7 @@ router.get('/raagis/:raagi_name/recordings/:recording_title/shabads', (req, res)
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "select shabad.sathaayi_title as shabad_english_title, recording.title as recording_title, shabad_info.sathaayi_id, " +
-            "shabad_info.starting_id, rrs.starting_time as shabad_starting_time, rrs.ending_time as shabad_ending_time, " +
-            "shabad_info.ending_id, to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.checked as shabad_checked " +
-            "from raagi_recording_shabad as rrs " +
-            "join shabad on rrs.shabad_id = shabad.id " +
-            "join shabad_info on shabad.shabad_info_id = shabad_info.id " +
-            "join recording on rrs.recording_id = recording.id " +
-            "where rrs.raagi_id=(select id from raagi where name = $1) and recording.title=$2 order by shabad.sathaayi_title",
+        text: queries.RAAGIS_RECORDINGS_SHABADS,
         values: [req.params.raagi_name, req.params.recording_title]
     };
     client.query(query, (err, sqlResponse) => {
@@ -197,7 +177,7 @@ router.get('/recordings/:recording_title/shabads', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "select shabad.sathaayi_title as shabad_sathaayi_title from shabad join raagi_recording_shabad as rrs on shabad.id = rrs.shabad_id where rrs.recording_id=(select id from recording where title = $1) order by shabad.sathaayi_title",
+        text: queries.RECORDINGS_SHABADS,
         values: [req.params.recording_title]
     };
     client.query(query, (err, sqlResponse) => {
@@ -214,8 +194,7 @@ router.get('/shabads/:sathaayi_id/raagis', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "select raagi.name as raagi_name from shabad join raagi_recording_shabad as rrs on shabad.id = rrs.shabad_id " +
-            "join raagi on raagi.id = rrs.raagi_id where shabad.shabad_info_id = (select id from shabad_info where sathaayi_id = $1)",
+        text: queries.SHABADS_RAAGIS,
         values: [req.params.sathaayi_id]
     };
     client.query(query, (err, sqlResponse) => {
@@ -232,8 +211,7 @@ router.get('/recentRaagis', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "select distinct raagi.name as raagi_name from raagi_recording_shabad as rrs join raagi on raagi.id = rrs.raagi_id " +
-            "where rrs.date_added between (now() - interval '7 day') and now()",
+        text: queries.RECENT_RAAGIS,
         values: []
     };
     client.query(query, (err, sqlResponse) => {
@@ -246,23 +224,6 @@ router.get('/recentRaagis', (req, res) => {
     });
 });
 
-router.get('/shabadListeners/:id', (req, res) => {
-    let client = initialize_client();
-    client.connect();
-
-    client.query("select listeners from raagi_recording_shabad as rrs where rrs.id = $1", [req.params.id], (err, sqlResponse) => {
-        if(err){
-            console.log(err);
-            res.json({
-                "ResponseCode": 400,
-                "Result": "Failure"
-            });
-        }else{
-            res.json(sqlResponse.rows[0]);
-        }
-    });
-});
-
 router.get('/shabadTutorials/limit/:limit', (req, res) => {
     let client = initialize_client();
     client.connect();
@@ -271,27 +232,12 @@ router.get('/shabadTutorials/limit/:limit', (req, res) => {
 
     if(limit === "all"){
         query = {
-            text: "select shabad_tutorial.url, shabad_tutorial.title, shabad_tutorial.harmonium_scale, \n" +
-                "shabad_tutor.name as shabad_tutor, shabad.sathaayi_title, raagi.name as raagi_name\n" +
-                "from shabad_tutorial\n" +
-                "join shabad_tutor on shabad_tutorial.shabad_tutor_id = shabad_tutor.id\n" +
-                "join raagi_recording_shabad as rrs on rrs.id = shabad_tutorial.raagi_recording_shabad_id\n" +
-                "join shabad on rrs.shabad_id = shabad.id\n" +
-                "join raagi on rrs.raagi_id = raagi.id\n" +
-                "order by shabad_tutorial.date_added desc",
+            text: queries.SHABAD_TUTORIALS_ALL,
             values: []
         }
     }else{
         query = {
-            text: "select shabad_tutorial.url, shabad_tutorial.title, shabad_tutorial.harmonium_scale, \n" +
-                "shabad_tutor.name as shabad_tutor, shabad.sathaayi_title, raagi.name as raagi_name\n" +
-                "from shabad_tutorial\n" +
-                "join shabad_tutor on shabad_tutorial.shabad_tutor_id = shabad_tutor.id\n" +
-                "join raagi_recording_shabad as rrs on rrs.id = shabad_tutorial.raagi_recording_shabad_id\n" +
-                "join shabad on rrs.shabad_id = shabad.id\n" +
-                "join raagi on rrs.raagi_id = raagi.id\n" +
-                "order by shabad_tutorial.date_added desc \n" +
-                "limit $1",
+            text: queries.SHABAD_TUTORIALS_LIMIT,
             values: [limit]
         }
     }
@@ -308,12 +254,29 @@ router.get('/shabadTutorials/limit/:limit', (req, res) => {
     });
 });
 
+router.get('/shabadListeners/:id', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+
+    client.query(queries.SHABAD_LISTENERS_BY_ID, [req.params.id], (err, sqlResponse) => {
+        if(err){
+            console.log(err);
+            res.json({
+                "ResponseCode": 400,
+                "Result": "Failure"
+            });
+        }else{
+            res.json(sqlResponse.rows[0]);
+        }
+    });
+});
+
 router.post('/shabadListeners', (req, res) => {
     console.log(req);
     let client = initialize_client();
     client.connect();
 
-    client.query("update raagi_recording_shabad set listeners = listeners + 1 where id = $1", [req.body.id], (err, sqlRes) => {
+    client.query(queries.SHABAD_LISTENERS, [req.body.id], (err, sqlRes) => {
         if(err){
             console.log(err);
             res.json({
@@ -656,95 +619,6 @@ function upload_shabad(shabad_english_title, raagi_name, res){
             });
         }
     });
-
 }
-
-/*
-router.get("/transferData", (req, res) => {
-
-    //let vismaadnaadtest_client = new Client(config.database2);
-    let raagi, recording, shabad_info, shabad, raagi_recording_shabad, theme, shabad_info_theme, member, playlist, playlist_shabad;
-    (async () => {
-        const vismaadnaaddev_client = await initialize_pool().connect();
-        try{
-            await vismaadnaaddev_client.query('BEGIN');
-            await vismaadnaaddev_client.query("SELECT * FROM raagi", (err, res) => {
-                raagi = res.rows;
-            });
-            await vismaadnaaddev_client.query("SELECT * FROM recording", (err, res) => {
-                recording = res.rows;
-            });
-            await vismaadnaaddev_client.query("SELECT * FROM shabad_info", (err, res) => {
-                shabad_info = res.rows;
-            });
-            await vismaadnaaddev_client.query("SELECT * FROM shabad", (err, res) => {
-                shabad = res.rows;
-            });
-            await vismaadnaaddev_client.query("SELECT * FROM raagi_recording_shabad", (err, res) => {
-                raagi_recording_shabad = res.rows;
-            });
-            await vismaadnaaddev_client.query("SELECT * FROM theme", (err, res) => {
-                theme = res.rows;
-            });
-            await vismaadnaaddev_client.query("SELECT * FROM shabad_info_theme", (err, res) => {
-                shabad_info_theme = res.rows;
-            });
-            await vismaadnaaddev_client.query("SELECT * FROM member", (err, res) => {
-                member = res.rows;
-            });
-            await vismaadnaaddev_client.query("SELECT * FROM playlist", (err, res) => {
-                playlist = res.rows;
-            });
-            await vismaadnaaddev_client.query("SELECT * FROM playlist_shabad", (err, res) => {
-                playlist_shabad = res.rows;
-            });
-            await vismaadnaaddev_client.query('COMMIT');
-        }catch(e){
-            await vismaadnaaddev_client.query('ROLLBACK');
-            throw e
-        }finally{
-            vismaadnaaddev_client.release();
-            (async () => {
-                const vismaadnaad_client = await (new Pool(config.database2)).connect();
-                try{
-                    await vismaadnaadtest_client.query('BEGIN');
-                    for(let row of raagi){
-                        await vismaadnaadtest_client.query("INSERT INTO RAAGI (NAME, IMAGE_URL, LIKES, DATE_ADDED) VALUES ($1, $2, 0, $3)", [row.name, row.image_url, row.date_added])
-                    }
-                    for(let row of recording){
-                        await vismaadnaadtest_client.query("INSERT INTO RECORDING (TITLE, URL, DATE_ADDED) VALUES ($1, $2, $3)", [row.title, row.url, row.date_added])
-                    }
-                    for(let row of shabad_info){
-                        await vismaadnaadtest_client.query("INSERT INTO SHABAD_INFO (SATHAAYI_ID, STARTING_ID, ENDING_ID, CHECKED) VALUES ($1, $2, $3, $4)", [row.sathaayi_id, row.starting_id, row.ending_id, row.checked])
-                    }
-                    for(let row of shabad){
-                        await vismaadnaadtest_client.query("INSERT INTO SHABAD (SATHAAYI_TITLE, SHABAD_INFO_ID) VALUES ($1, (SELECT ID FROM SHABAD_INFO WHERE SATHAAYI_ID=$2))", [row.sathaayi_title, row.sathaayi_id])
-                    }
-                    for(let row of raagi_recording_shabad){
-                        await vismaadnaadtest_client.query("INSERT INTO RAAGI_RECORDING_SHABAD (RAAGI_ID, RECORDING_ID, SHABAD_ID, STARTING_TIME, ENDING_TIME, LENGTH, STATUS, DATE_ADDED) " +
-                            "VALUES ((SELECT ID FROM RAAGI WHERE NAME=$1), (SELECT ID FROM RECORDING WHERE TITLE=$2), (SELECT ID FROM SHABAD WHERE SATHAAYI_TITLE=$3), $4, $5, $6, $7, $8)",
-                            [row.raagi_name, row.recording_title, row.shabad_sathaayi_title, row.starting_time, row.ending_time, row.length, "PROD", row.date_added])
-                    }
-                    for(let row of member){
-                        console.log(row.account_id);
-                        await vismaadnaadtest_client.query("INSERT INTO MEMBER (ACCOUNT_ID, USERNAME, PASSWORD_HASH, FIRST_NAME, LAST_NAME, DATE_OF_BIRTH, GENDER, SOURCE_OF_ACCOUNT, DATE_ADDED) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-                            [row.account_id, row.username, row.password_hash, row.first_name, row.last_name, row.date_of_birth, row.gender, row.source_of_account, row.date_added])
-                    }
-
-
-                    await vismaadnaadtest_client.query('COMMIT');
-                    res.json('SUCCESS');
-                }catch(e){
-                    await vismaadnaadtest_client.query('ROLLBACK');
-                    throw e
-                }finally{
-                    vismaadnaadtest_client.release();
-                }
-            })().catch(e => console.error(e.stack));
-        }
-    })().catch(e => console.error(e.stack));
-
-});
-*/
 
 module.exports = router;
