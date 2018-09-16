@@ -14,7 +14,7 @@ export class RecordingFormComponent implements OnInit {
 
   editRecording: boolean = false;
   isUploadingShabadsFromLocal: boolean = false;
-  fileToUpload: File = null;
+  fileToUploads = [];
 
   raagiNamesList = [];
   recordingTitleList = [];
@@ -239,19 +239,18 @@ export class RecordingFormComponent implements OnInit {
         }
       }
 
-
       if(this.isUploadingShabadsFromLocal){
-        raagiObj.recordings[0].shabads[0]['status'] = "PROD";
-        console.log(raagiObj);
+        raagiObj.recordings[0].shabads.map(shabad => {
+          shabad.status = "PROD";
+        });
         this.restService.addRaagiRecording(raagiObj)
-          .then(data => this.restService.uploadShabadFile(this.fileToUpload, raagiObj))
+          .then(data => this.restService.uploadShabadFiles(this.fileToUploads, raagiObj))
           .catch(error => this.toastrService.error('', 'An error has occurred. Please recheck your submission', this.config));
       }else if(this.editRecording){
         this.restService.addShabadsByRecording(this.selectedRaagi, this.selectedRecording, shabadsObj)
           .then(data => this.toastrService.success('', 'Shabads added successfully!', this.config))
           .catch(error => this.toastrService.error('', 'An error has occurred. Please recheck your submission', this.config));
       }else{
-
         if(newRaagi){
           this.restService.addRaagiRecording(raagiObj)
             .then(data => this.toastrService.success('', 'Raagi Added Successfully!', this.config))
@@ -262,9 +261,7 @@ export class RecordingFormComponent implements OnInit {
             .catch(error => console.log(error));
         }
       }
-
     }
-
   }
 
   onRecordingURLChange(recordingURL){
@@ -289,7 +286,7 @@ export class RecordingFormComponent implements OnInit {
   }
 
   handleFileInput(files: FileList) {
-    this.fileToUpload = files.item(0);
+    this.fileToUploads.push(files.item(0));
   }
 
   // When sathayi is selected, process starting lines array.

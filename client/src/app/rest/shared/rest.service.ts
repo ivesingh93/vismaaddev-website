@@ -285,27 +285,34 @@ export class RestService{
       .catch(this.handleError);
   }
 
-  uploadShabadFile(file, raagiObj) {
-    let key = "Raagis/" + raagiObj.raagi_name + "/" + raagiObj['recordings'][0]['shabads'][0].shabad_english_title + ".mp3";
-    const bucket = new S3({
-        accessKeyId: RestConstants.ACCESS_KEY_ID,
-        secretAccessKey: RestConstants.SECRET_ACCESS_KEY,
-        region: 'eu-west-2'
-      });
-    const params = {
-      Bucket: 'vismaadnaad',
-      Key: key,
-      Body: file,
-      ACL:'public-read',
-      ContentType: "audio/mpeg"
-    };
+  uploadShabadFiles(files, raagiObj) {
 
-    return bucket.putObject(params, (err, data) => {
-      if (err) {
-        this.toastrService.error('', 'An error has occurred. Please recheck your submission', this.config)
-      }
-      this.toastrService.success('', 'Shabads added successfully!', this.config)
+    const bucket = new S3({
+      accessKeyId: RestConstants.ACCESS_KEY_ID,
+      secretAccessKey: RestConstants.SECRET_ACCESS_KEY,
+      region: 'eu-west-2'
     });
+
+    for(let i = 0; i < files.length; i++){
+      let shabad_english_title = raagiObj.recordings[0].shabads[i]['shabad_english_title'];
+      const params = {
+        Bucket: 'vismaadnaad',
+        Key: "Raagis/" + raagiObj.raagi_name + "/" + shabad_english_title + ".mp3",
+        Body: files[i],
+        ACL:'public-read',
+        ContentType: "audio/mpeg"
+      };
+
+      bucket.putObject(params, (err, data) => {
+        if (err) {
+          this.toastrService.error(shabad_english_title, 'An error has occurred. Please recheck your submission', this.config)
+        }
+        this.toastrService.success(shabad_english_title, 'Shabad added successfully!', this.config)
+      });
+    }
+
+
+
   }
 
   private extractData(responseSerialized: Response): Promise<any>{

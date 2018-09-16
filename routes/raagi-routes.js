@@ -263,7 +263,7 @@ router.get('/shabadListeners/:id', (req, res) => {
     });
 });
 
-router.get('/recentTutorials/limit/:limit', (req, res) => {
+router.get('/shabadTutorials/limit/:limit', (req, res) => {
     let client = initialize_client();
     client.connect();
     let limit = req.params.limit;
