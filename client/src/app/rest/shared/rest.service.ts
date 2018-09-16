@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import {EventEmitter, Injectable} from '@angular/core';
 import {Http, Response, Headers, RequestOptions} from '@angular/http';
 import 'rxjs/add/operator/toPromise';
 import * as AWS from 'aws-sdk/global';
@@ -47,6 +47,8 @@ export class RestService{
   };
 
   constructor(private http: Http, private toastrService: ToastrService){}
+
+  selectedRaagi = new EventEmitter<string>();
 
   addRaagiRecording(raagi_obj){
     let headers = new Headers({ 'Content-Type': 'application/json' });

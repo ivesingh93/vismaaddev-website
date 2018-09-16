@@ -175,10 +175,9 @@
               </ng-select>
             </div>
 
-            <br>
-
-
+            <!-- Show list of shabad titles if the selected shabad id exists -->
             <mat-form-field *ngIf="selectedShabadSathaayiTitles.length > 0">
+              <br>
               <label>Already existed shabad titles of this pankti: </label>
                 <mat-chip-list>
                   <mat-chip *ngFor="let sst of selectedShabadSathaayiTitles">

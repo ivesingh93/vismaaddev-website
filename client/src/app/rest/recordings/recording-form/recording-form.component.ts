@@ -366,8 +366,10 @@ export class RecordingFormComponent implements OnInit {
 
   // Set selectedRaagi to a value that's selected, only if raagi already exists.
   onRaagiSelected(value: any){
+
     this.editRecording = false;
     this.selectedRaagi = value['text'];
+    this.restService.selectedRaagi.emit(this.selectedRaagi);
     if(this.selectedRaagi !== "Add New Raagi"){
       // Add RecordingTitles to the list by selected Raagi
       this.restService.getRecordingsByRaagi(this.selectedRaagi)
@@ -394,14 +396,10 @@ export class RecordingFormComponent implements OnInit {
     if(this.selectedRaagi){
       for(let i = 0; i < this.shabadsByRaagiList.length; i++){
         if(this.shabadsByRaagiList[i].shabad_english_title === this.selectedShabads[index]){
-          this.toastrService.warning('', this.selectedShabads[index] + ' shabad already exists of this raagi. ' +
-            'Starting/Ending time has been set to 00:00', this.config);
-          this.recordingForm.controls['shabads']['controls'][index]['controls']['shabadStartingTime'].setValue("00:00");
-          this.recordingForm.controls['shabads']['controls'][index]['controls']['shabadEndingTime'].setValue("00:00");
+          this.toastrService.warning('', this.selectedShabads[index] + '    shabad already exists of this raagi. ', this.config);
           break;
         }
       }
-
     }
   }
 

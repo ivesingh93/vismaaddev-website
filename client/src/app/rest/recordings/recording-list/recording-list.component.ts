@@ -14,12 +14,19 @@ export class RecordingListComponent implements OnInit {
   panktiList = [];
   recentRecordings = [];
 
-
+  selectedRaagi: string;
+  shabadsOfSelectedRaagi = [];
   constructor(private restService: RestService) { }
 
   ngOnInit() {
     this.getRecentRecordings();
     this.getShabads();
+    this.restService.selectedRaagi.subscribe(selectedRaagi => {
+      this.selectedRaagi = selectedRaagi;
+      this.restService.getShabadsByRaagi(selectedRaagi)
+        .then(shabads => this.shabadsOfSelectedRaagi = shabads)
+        .catch(error => console.log(error));
+    });
   }
 
   getRecentRecordings(){

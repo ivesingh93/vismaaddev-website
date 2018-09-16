@@ -3,6 +3,18 @@
 
   <mat-tab-group style="height: 1000px;">
 
+    <mat-tab label="All Shabads of the Selected Raagi" layout-fill>
+      <div *ngIf="selectedRaagi">
+        <br>
+        <h3>{{selectedRaagi}}</h3>
+        <br>
+        <div *ngFor="let shabad of shabadsOfSelectedRaagi; let i = index">
+          <h4><b>{{i+1}}</b>:  <mark [ngStyle]="{'background-color': '#1e88e5', 'color': '#fafafa'}" >{{shabad['shabad_length']}}</mark>  -  {{shabad['shabad_english_title']}}</h4>
+        </div>
+      </div>
+
+    </mat-tab>
+
     <mat-tab label="Recent Recordings"  layout-fill>
       <br>
       <label>Recording Title</label>
