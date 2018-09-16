@@ -294,8 +294,6 @@ router.post('/shabadListeners', (req, res) => {
 
 // NOTE - addRaagi and addRecording is now one POST url.
 router.post('/addRaagiRecording', (req, res) =>{
-
-
     (async () => {
         const client = await initialize_pool().connect();
         // raagi_id = 72, recording_id = 160, shabad_info_id = 418, shabad_id = 417,
@@ -305,20 +303,20 @@ router.post('/addRaagiRecording', (req, res) =>{
 
             await client.query('BEGIN');
 
-            let raagi_rows = await client.query("INSERT INTO RAAGI (NAME, IMAGE_URL) VALUES ($1, $2) ON CONFLICT (NAME) DO NOTHING RETURNING ID", [req.body.raagi_name, image_url]);
+            let raagi_rows = await client.query(queries.ADD_RAAGI_RECORDING_INSERT_RAAGI, [req.body.raagi_name, image_url]);
             if(raagi_rows.rows.length === 0){
-                raagi_rows = await client.query("SELECT ID FROM RAAGI WHERE NAME=$1", [req.body.raagi_name]);
+                raagi_rows = await client.query(queries.ADD_RAAGI_RECORDING_SELECT_RAAGI, [req.body.raagi_name]);
             }
             raagi_id = raagi_rows.rows[0].id;
 
             let recording_rows;
 
             if(req.body.recordings[0].recording_url === "no_recording"){
-                recording_rows = await client.query("SELECT ID FROM RECORDING WHERE URL = 'no_recording'");
+                recording_rows = await client.query(queries.ADD_RAAGI_RECORDING_SELECT_NO_RECORDING);
             }else{
-                recording_rows = await client.query("INSERT INTO RECORDING (TITLE, URL) VALUES ($1, $2) RETURNING ID", [req.body.recordings[0].recording_title, req.body.recordings[0].recording_url]);
+                recording_rows = await client.query(queries.ADD_RAAGI_RECORDING_INSERT_RECORDING, [req.body.recordings[0].recording_title, req.body.recordings[0].recording_url]);
                 if(recording_rows.rows.length === 0){
-                    recording_rows = await client.query("SELECT ID FROM RECORDING WHERE TITLE=$1", [req.body.recordings[0].recording_title]);
+                    recording_rows = await client.query(queries.ADD_RAAGI_RECORDING_SELECT_RECORDING, [req.body.recordings[0].recording_title]);
                 }
             }
 
@@ -347,22 +345,22 @@ router.post('/addRaagiRecording', (req, res) =>{
 
                 let shabad_length = diff(starting_time, ending_time);
 
-                let shabad_info_rows = await client.query("INSERT INTO SHABAD_INFO (SATHAAYI_ID, STARTING_ID, ENDING_ID, CHECKED) VALUES ($1, $2, $3, $4) ON CONFLICT (SATHAAYI_ID) DO NOTHING RETURNING ID",
+                let shabad_info_rows = await client.query(queries.ADD_RAAGI_RECORDING_INSERT_SHABAD_INFO,
                     [shabad.sathaayi_id, shabad.starting_id, shabad.ending_id, false]);
                 if(shabad_info_rows.rows.length === 0){
-                    shabad_info_rows = await client.query("SELECT ID FROM SHABAD_INFO WHERE SATHAAYI_ID=$1", [shabad.sathaayi_id]);
+                    shabad_info_rows = await client.query(queries.ADD_RAAGI_RECORDING_SELECT_SHABAD_INFO, [shabad.sathaayi_id]);
                 }
                 shabad_info_id = shabad_info_rows.rows[0].id;
 
 
-                let shabad_rows = await client.query("INSERT INTO SHABAD (SATHAAYI_TITLE, SHABAD_INFO_ID) VALUES ($1, $2) ON CONFLICT (SATHAAYI_TITLE) DO NOTHING RETURNING ID",
+                let shabad_rows = await client.query(queries.ADD_RAAGI_RECORDING_INSERT_SHABAD,
                     [shabad.shabad_english_title, shabad_info_id]);
                 if(shabad_rows.rows.length === 0){
-                    shabad_rows = await client.query("SELECT ID FROM SHABAD WHERE SATHAAYI_TITLE=$1", [shabad.shabad_english_title]);
+                    shabad_rows = await client.query(queries.ADD_RAAGI_RECORDING_SELECT_SHABAD, [shabad.shabad_english_title]);
                 }
                 shabad_id = shabad_rows.rows[0].id;
 
-                await client.query("INSERT INTO RAAGI_RECORDING_SHABAD (RAAGI_ID, RECORDING_ID, SHABAD_ID, STARTING_TIME, ENDING_TIME, LENGTH, STATUS) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+                await client.query(queries.ADD_RAAGI_RECORDING_INSERT_RAAGI_RECORDING_SHABAD,
                     [raagi_id, recording_id, shabad_id, starting_time, ending_time, shabad_length, status]);
             }
 
@@ -446,8 +444,7 @@ router.put('/setStatusToPROD', (req, res) => {
 
     let client = initialize_client();
     client.connect();
-    client.query("update raagi_recording_shabad set status=$1 where recording_id=(select id from recording where title=$2) " +
-        "and raagi_id=(select id from raagi where name=$3)", ["PROD", recording_title, raagi_name], (req, sqlRes) => {
+    client.query(queries.SET_STATUS_TO_PROD, ["PROD", recording_title, raagi_name], (req, sqlRes) => {
         res.json("SUCCESS");
     });
 });
@@ -455,7 +452,7 @@ router.put('/setStatusToPROD', (req, res) => {
 router.put('/changeShabadTitle', (req, res) => {
     let client = initialize_client();
     client.connect();
-    client.query('update shabad set sathaayi_title=$1 where sathaayi_title=$2', [req.body.new_shabad_english_title,
+    client.query(queries.CHANGE_SHABAD_TITLE, [req.body.new_shabad_english_title,
         req.body.old_shabad_english_title], (err, sqlResponse) => {
         res.json("Success");
         client.end();
@@ -465,7 +462,7 @@ router.put('/changeShabadTitle', (req, res) => {
 router.put('/changeStartingID', (req, res) => {
     let client = initialize_client();
     client.connect();
-    client.query('update shabad_info set starting_id=$1 where starting_id=$2', [req.body.new_starting_id,
+    client.query(queries.CHANGE_STARTING_ID, [req.body.new_starting_id,
         req.body.original_starting_id], (err, sqlResponse) => {
         res.json("Success");
         client.end();
@@ -475,7 +472,7 @@ router.put('/changeStartingID', (req, res) => {
 router.put('/changeEndingID', (req, res) => {
     let client = initialize_client();
     client.connect();
-    client.query('update shabad_info set ending_id=$1 where ending_id=$2', [req.body.new_ending_id,
+    client.query(queries.CHANGE_ENDING_ID, [req.body.new_ending_id,
         req.body.original_ending_id], (err, sqlResponse) => {
         res.json("Success");
         client.end();

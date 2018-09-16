@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const { Pool, Client } = require('pg');
 const config = require('../config/database');
+const queries = require('../config/queries');
 
 function initialize_client(){
     return new Client(config.vismaadnaad);
@@ -11,20 +12,6 @@ function initialize_client(){
 function initialize_pool(){
     return new Pool(config.vismaadnaad);
 }
-
-/*
-
-{
-  "account_id": "mraval.singh@gmail.com",
-  "username": "ivesingh",
-  "password": "9april1993",
-  "dob": "04/09/1993",
-  "gender": "Male",
-  "first_name": "Ivkaran",
-  "last_name": "Singh",
-  "source_of_login": "Email"
-}
- */
 
 // Register users who are using Email
 router.post('/signup', (req, res) => {
@@ -37,8 +24,7 @@ router.post('/signup', (req, res) => {
             bcrypt.hash(req.body.password, salt, (err, hash) => {
                 if (err) throw err;
                 let query = {
-                    text: "insert into member (account_id, username, password_hash, first_name, last_name, source_of_account) " +
-                    "values ($1, $2, $3, $4, $5, $6)",
+                    text: queries.SIGNUP_EMAIL,
                     values: [req.body.account_id, req.body.username, hash, req.body.first_name, req.body.last_name, req.body.source_of_account.toUpperCase()]
                 };
                 client.query(query, (err, sqlResponse) => {
@@ -71,8 +57,7 @@ router.post('/signup', (req, res) => {
         });
     }else{
         let query = {
-            text: "insert into member (account_id, username, first_name, last_name, source_of_account) " +
-            "values ($1, $2, $3, $4, $5)",
+            text: queries.SIGNUP_NO_EMAIL,
             values: [req.body.account_id, req.body.username, req.body.first_name, req.body.last_name, req.body.source_of_account.toUpperCase()]
         };
 
@@ -120,13 +105,13 @@ router.post('/authenticate', (req, res) => {
     if(source_of_account.toLowerCase() === "email"){
         console.log("hello2");
         query = {
-            text: "select account_id, password_hash, first_name, last_name, username from member where LOWER(account_id) LIKE LOWER($1) or LOWER(username) LIKE LOWER($2)",
+            text: queries.AUTHENTICATE_EMAIL,
             values: [account_id, username]
         };
     }else if(source_of_account.toLowerCase() === "facebook" || source_of_account === "gmail"){
         console.log("hello3");
         query = {
-            text: "select account_id, first_name, last_name, username from member where LOWER(account_id) LIKE LOWER($1)",
+            text: queries.AUTHENTICATE_NO_EMAIL,
             values: [account_id]
         };
     }
@@ -188,7 +173,7 @@ router.post('/authenticate', (req, res) => {
 router.post('/createPlaylist', (req, res) => {
     let client = initialize_client();
     client.connect();
-    client.query("insert into playlist (name, member_id) values ($1, (select id from member where LOWER(username) LIKE LOWER($2)))", [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
+    client.query(queries.CREATE_PLAYLIST, [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
         if(err){
             res.json({
                 "ResponseCode": 400,
@@ -207,8 +192,7 @@ router.post('/createPlaylist', (req, res) => {
 router.post('/deletePlaylist', (req, res) => {
     let client = initialize_client();
     client.connect();
-    client.query("delete from playlist where name=$1 and member_id=(select id from member where LOWER(username) LIKE LOWER($2))",
-        [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
+    client.query(queries.DELETE_PLAYLIST, [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
         if(err){
             console.log(err);
             res.json({
@@ -231,9 +215,7 @@ router.post('/addShabads', (req, res) => {
         try{
             await client.query('BEGIN');
             for(let shabad of req.body){
-                await client.query("insert into playlist_shabad (playlist_id, raagi_recording_shabad_id) values" +
-                    " ((select id from playlist where member_id=(select id from member where LOWER(username) LIKE " +
-                    "LOWER($1)) and name=$2), $3)", [shabad.username, shabad.playlist_name, shabad.id]);
+                await client.query(queries.ADD_SHABADS, [shabad.username, shabad.playlist_name, shabad.id]);
             }
             await client.query('COMMIT');
             res.json({
@@ -256,8 +238,7 @@ router.post('/removeShabads', (req, res) => {
         try{
             await client.query('BEGIN');
             for(let shabad of req.body){
-                await client.query("delete from playlist_shabad where raagi_recording_shabad_id=$1 and playlist_id=(select id from playlist where member_id=(select id from member where LOWER(username) LIKE LOWER($2)) and name=$3)",
-                    [shabad.id, shabad.username, shabad.playlist_name]);
+                await client.query(queries.REMOVE_SHABADS, [shabad.id, shabad.username, shabad.playlist_name]);
             }
             await client.query('COMMIT');
             res.json({
@@ -283,10 +264,9 @@ router.post('/likeShabad', (req, res) => {
 
             console.log(req.body);
 
-            await client.query("insert into member_raagi_recording_shabad (raagi_recording_shabad_id, member_id) " +
-                "values ($1, (select id from member where LOWER(username) LIKE LOWER($2)))", [rrs_id, username]);
+            await client.query(queries.LIKE_SHABAD, [rrs_id, username]);
 
-            await client.query("update raagi_recording_shabad set likes = likes + 1 where id = $1", [rrs_id]);
+            await client.query(queries.LIKE_SHABAD_UPDATE_RAAGI_RECORDING_SHABAD, [rrs_id]);
 
             await client.query('COMMIT');
             res.json({
@@ -312,10 +292,9 @@ router.post('/unlikeShabad', (req, res) => {
 
             console.log(req.body);
 
-            await client.query("delete from member_raagi_recording_shabad where raagi_recording_shabad_id = $1 and " +
-                "member_id = (select id from member where LOWER(username) LIKE LOWER($2))", [rrs_id, username]);
+            await client.query(queries.UNLIKE_SHABAD, [rrs_id, username]);
 
-            await client.query("update raagi_recording_shabad set likes = likes - 1 where id = $1", [rrs_id]);
+            await client.query(queries.UNLIKE_SHABAD_UPDATE_RAAGI_RECORDING_SHABAD, [rrs_id]);
 
             await client.query('COMMIT');
             res.json({
@@ -334,7 +313,7 @@ router.post('/unlikeShabad', (req, res) => {
 router.get('/shabadLikes/:id', (req, res) => {
     let client = initialize_client();
     client.connect();
-    client.query("select likes from raagi_recording_shabad as rrs where rrs.id = $1", [req.params.id], (err, sqlResponse) => {
+    client.query(queries.SHABAD_LIKES, [req.params.id], (err, sqlResponse) => {
         if(err){
             console.log(err);
             res.json({
@@ -350,8 +329,7 @@ router.get('/shabadLikes/:id', (req, res) => {
 router.get('/members/:username/shabadLikes/:id', (req, res) => {
    let client = initialize_client();
    client.connect();
-   client.query("select * from member_raagi_recording_shabad where raagi_recording_shabad_id = $1 and member_id = " +
-       " (select id from member where LOWER(username) LIKE LOWER($2))", [req.params.id, req.params.username], (err, sqlRes) => {
+   client.query(queries.MEMBERS_SHABAD_LIKES, [req.params.id, req.params.username], (err, sqlRes) => {
       if(err){
           console.log(err);
           res.json({
@@ -380,10 +358,7 @@ router.get('/users/:username/playlists', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "select playlist.name, count(ps.playlist_id) as shabads_count from playlist " +
-        "left join playlist_shabad as ps on playlist.id = ps.playlist_id " +
-        "where member_id=(select id from member where LOWER(username) LIKE LOWER($1)) " +
-        "group by playlist.name",
+        text: queries.USERS_PLAYLISTS,
         values: [ req.params.username]
     };
     client.query(query, (err, sqlResponse) => {
@@ -401,17 +376,7 @@ router.get('/users/:username/playlists/:playlist_name', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "select rrs.id, raagi.name as raagi_name, recording.title as recording_title, shabad.sathaayi_title as shabad_english_title, " +
-        "concat('https://s3.eu-west-2.amazonaws.com/vismaadnaad/Raagis/',raagi.name, '/', shabad.sathaayi_title, '.mp3') as shabad_url, " +
-        "to_char(rrs.length, 'MI:SS') as shabad_length, shabad_info.sathaayi_id, shabad_info.starting_id, shabad_info.ending_id " +
-        "from playlist as p " +
-        "join playlist_shabad as ps on p.id = ps.playlist_id " +
-        "join raagi_recording_shabad as rrs on ps.raagi_recording_shabad_id = rrs.id " +
-        "join raagi on raagi.id = rrs.raagi_id " +
-        "join recording on recording.id = rrs.recording_id " +
-        "join shabad on rrs.shabad_id=shabad.id " +
-        "join shabad_info on shabad.shabad_info_id=shabad_info.id " +
-        "where p.member_id=(select id from member where LOWER(username) LIKE LOWER($1)) and p.name=$2 order by rrs.shabad_id",
+        text: queries.USERS_PLAYLIST,
         values: [ req.params.username, req.params.playlist_name]
     };
     client.query(query, (err, sqlResponse) => {
