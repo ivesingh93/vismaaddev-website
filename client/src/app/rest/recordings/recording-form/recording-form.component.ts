@@ -325,8 +325,8 @@ export class RecordingFormComponent implements OnInit {
           this.selectedShabadSathaayiTitles = [];
           this.prepareLines(kirtan_id, selected);
         }else{
+          this.selectedShabadSathaayiTitles = [];
           data.map(shabad => {
-            this.selectedShabadSathaayiTitles = [];
             this.selectedShabadSathaayiTitles.push(shabad.shabad_english_title);
           });
           this.prepareLines(kirtan_id, selected);
@@ -387,6 +387,7 @@ export class RecordingFormComponent implements OnInit {
 
   // Set selectedShabads to a value that's selected, only if shabad already exists.
   onShabadSelected(value: any, index){
+    this.selectedShabadSathaayiTitles = [];
     this.selectedShabads[index] = value['text'];
 
     // Check if the selected raagi has the current selected shabad. If so, then set the starting/ending time: 00:00
