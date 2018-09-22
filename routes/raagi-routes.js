@@ -21,6 +21,19 @@ router.get('/raagiNames', (req, res) =>{
     });
 });
 
+router.get('/kathavaachaks', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    let kathavaachaks = [];
+    client.query(queries.KATHAVAACHAKS, (err, sqlResponse) => {
+       for(let kathavaachak of sqlResponse.rows){
+           kathavaachaks.push(kathavaachak.name);
+       }
+       res.send(kathavaachaks);
+       client.end();
+    });
+});
+
 router.get('/recordingURLs', (req, res) =>{
     let client = initialize_client();
     client.connect();
