@@ -10,8 +10,6 @@ import { ToastrService, ToastConfig } from 'ngx-toastr';
   styleUrls: ['./recording-form.component.css']
 })
 export class RecordingFormComponent implements OnInit {
-
-
   editRecording: boolean = false;
   isUploadingShabadsFromLocal: boolean = false;
   fileToUploads = [];
@@ -70,13 +68,11 @@ export class RecordingFormComponent implements OnInit {
     });
   }
 
-  // REST call to GET Raagis and Recordings
   getRaagiNames(){
-    let componentThis = this;
     this.restService.getRaagiNames()
-      .then(function(data){
-        componentThis.raagiNamesList = data;
-        componentThis.raagiNamesList.unshift("Add New Raagi");
+      .then(data => {
+        this.raagiNamesList = data;
+        this.raagiNamesList.unshift("Add New Raagi");
       })
       .catch(error => console.log(error));
   }
@@ -87,33 +83,37 @@ export class RecordingFormComponent implements OnInit {
       .catch(error => console.log(error));
   }
 
-  // REST call to GET Shabads
   getShabads(){
     this.restService.getShabads()
-      .then(data => this.extractShabads(data))
+      .then(data => {
+        this.existedShabads = data;
+        this.shabadsList = this.existedShabads.map(shabadObj => {
+          return shabadObj.shabad_english_title;
+        });
+        this.shabadsList.unshift("Add New Shabad");
+      })
       .catch(error => console.log(error));
   }
 
   // REST call for the lines according to the initials that were passed.
   getLines(index){
     let initials = this.recordingForm.value.shabads[index].initials;
-    let componentThis = this;
 
     this.restService.getLines(initials)
-      .then(function(data){
-        componentThis.sathaayiLines = [];
+      .then(data => {
+        /* Loop over the lines and create an object of an each line with its ID, text with gurbani font,
+         the pankti, and kirtan id (to state whether it's a shabad or not) */
 
-        // Loop over the lines and create an object of an each line with its ID, text with gurbani font,
-        // the pankti, and kirtan id (to state whether it's a shabad or not)
-        for(let i = 0; i < data.length; i++){
+        this.sathaayiLines = [];
+        this.sathaayiLines = data.map(pankti => {
           let obj = {
-            id: data[i]['ID'],
-            text: "<span style='font-family: GurbaniLipi; font-size: 19px'>" + data[i]['Gurmukhi'] + "</span>",
-            gurbani_pankti: data[i]['Gurmukhi'],
-            kirtan_id: data[i]['Kirtan_ID']
+            id: pankti['ID'],
+            text: "<span style='font-family: GurbaniLipi; font-size: 19px'>" + pankti['Gurmukhi'] + "</span>",
+            gurbani_pankti: pankti['Gurmukhi'],
+            kirtan_id: pankti['Kirtan_ID']
           };
-          componentThis.sathaayiLines.push(obj);
-        }
+          return obj;
+        });
       })
       .catch(error => console.log(error));
   }
@@ -339,13 +339,12 @@ export class RecordingFormComponent implements OnInit {
   // When starting line is selected, process ending lines.
   onStartingPanktiSelected(value: any, index){
     this.endingLines = [];
-    for(let i = 0; i < this.startingLines.length; i++){
-
+    this.endingLines = this.startingLines.map(line => {
       // Insert only those lines that are after the starting line.
-      if(this.startingLines[i]['id'] >= value.id){
-        this.endingLines.push(this.startingLines[i]);
+      if(line['id'] >= value.id){
+        return line;
       }
-    }
+    });
   }
 
   // Remove the current shabad control/row when 'x' is clicked
@@ -382,7 +381,6 @@ export class RecordingFormComponent implements OnInit {
 
   onRecordingTitleSelected(value){
     this.selectedRecording = value.text;
-    console.log(this.selectedRecording);
   }
 
   // Set selectedShabads to a value that's selected, only if shabad already exists.
@@ -394,7 +392,7 @@ export class RecordingFormComponent implements OnInit {
     if(this.selectedRaagi){
       for(let i = 0; i < this.shabadsByRaagiList.length; i++){
         if(this.shabadsByRaagiList[i].shabad_english_title === this.selectedShabads[index]){
-          this.toastrService.warning('', this.selectedShabads[index] + '    shabad already exists of this raagi. ', this.config);
+          this.toastrService.warning('', this.selectedShabads[index] + ' ==>   shabad already exists of this raagi. ', this.config);
           break;
         }
       }
@@ -420,9 +418,7 @@ export class RecordingFormComponent implements OnInit {
     }
   }
 
-  // Taken from Stackoverflow
   private toTitleCase(str) {
-
     return str.replace(/\w\S*/g,
       function(txt) {
       return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
@@ -579,36 +575,20 @@ export class RecordingFormComponent implements OnInit {
         pankti = "<span style='font-family: GurbaniLipi; font-size: 19px; color: red'>" + data[i]['Gurmukhi'] + "</span>"
       } else {
         pankti = "<span style='font-family: GurbaniLipi; font-size: 19px;'>" + data[i]['Gurmukhi'] + "</span>"
-
       }
-
       // Prepare an object for picking a starting line from startingLines array
-      let obj = {
+      this.startingLines.push({
         id: data[i]['ID'],
         text: pankti,
         pankti: data[i]['Gurmukhi']
-      };
-      this.startingLines.push(obj);
+      });
     }
-    console.log()
   }
 
   // Get final raagi name, whether it's from the existing list or a new one.
   private getRaagiName(){
-    if(this.recordingForm.value.raagiName[0].text == 'Add New Raagi'){
-      return [this.recordingForm.value.newRaagiName, true];
-    }else{
-      return [this.recordingForm.value.raagiName[0].text, false];
-    }
-  }
-
-  // Get all the shabads that already exists in the database
-  private extractShabads(data){
-    for(let shabadObj of data){
-      this.existedShabads.push(shabadObj);
-      this.shabadsList.push(shabadObj.shabad_english_title);
-    }
-    this.shabadsList.unshift("Add New Shabad");
+    const raagiName = this.recordingForm.value.raagiName[0].text;
+    return raagiName === 'Add New Raagi' ?  [this.recordingForm.value.newRaagiName, true] :  [raagiName, false];
   }
 
   // Add a new control

@@ -7,6 +7,7 @@ const child_process = require('child_process');
 const { Pool, Client } = require('pg');
 const config = require('../config/database');
 const queries = require('../config/queries');
+const constants = require('../config/constants');
 
 router.get('/raagiNames', (req, res) =>{
     let client = initialize_client();
@@ -256,14 +257,12 @@ router.get('/shabadTutorials/limit/:limit', (req, res) => {
     }
     client.query(query, (err, sqlResponse) => {
         if(err){
-            console.log(err);
-            res.json({
-                "ResponseCode": 400,
-                "Result": "Failure"
-            });
+            console.log(err.stack);
+            res.json(constants.FAILED_RESPONSE);
         }else{
             res.json(sqlResponse.rows);
         }
+        client.end();
     });
 });
 
@@ -273,34 +272,25 @@ router.get('/shabadListeners/:id', (req, res) => {
 
     client.query(queries.SHABAD_LISTENERS_BY_ID, [req.params.id], (err, sqlResponse) => {
         if(err){
-            console.log(err);
-            res.json({
-                "ResponseCode": 400,
-                "Result": "Failure"
-            });
+            console.log(err.stack);
+            res.json(constants.FAILED_RESPONSE);
         }else{
             res.json(sqlResponse.rows[0]);
         }
+        client.end();
     });
 });
 
 router.post('/shabadListeners', (req, res) => {
-    console.log(req);
     let client = initialize_client();
     client.connect();
 
     client.query(queries.SHABAD_LISTENERS, [req.body.id], (err, sqlRes) => {
         if(err){
-            console.log(err);
-            res.json({
-                "ResponseCode": 400,
-                "Result": "Failure"
-            });
+            console.log(err.stack);
+            res.json(constants.FAILED_RESPONSE);
         }else{
-            res.json({
-                "ResponseCode": 400,
-                "Result": "Success"
-            })
+            res.json(constants.SUCCESS_RESPONSE)
         }
     });
 });
@@ -311,12 +301,11 @@ router.post('/addRaagiRecording', (req, res) =>{
         const client = await initialize_pool().connect();
         // raagi_id = 72, recording_id = 160, shabad_info_id = 418, shabad_id = 417,
         try{
-            let image_url = "https://s3.eu-west-2.amazonaws.com/vismaadnaad/Raagis%20Photos/No%20Raagi.jpg";
             let raagi_id, recording_id, shabad_info_id, shabad_id;
 
             await client.query('BEGIN');
 
-            let raagi_rows = await client.query(queries.ADD_RAAGI_RECORDING_INSERT_RAAGI, [req.body.raagi_name, image_url]);
+            let raagi_rows = await client.query(queries.ADD_RAAGI_RECORDING_INSERT_RAAGI, [req.body.raagi_name, constants.IMAGE_URL]);
             if(raagi_rows.rows.length === 0){
                 raagi_rows = await client.query(queries.ADD_RAAGI_RECORDING_SELECT_RAAGI, [req.body.raagi_name]);
             }
@@ -394,7 +383,7 @@ router.post('/uploadRecording', (req, res) => {
     let recording_url = req.body.recording_url;
 
     let stream = request.get(recording_url).on('error', function(err){
-        console.log(err);
+        console.log(err.stack);
     }).pipe(fs.createWriteStream(recording_title + ".mp3"));
 
     stream.on('finish', () => res.json("Recording uploaded!"));
@@ -442,7 +431,7 @@ router.post('/uploadShabad', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {
-        text: "update shabad_info set checked=true where starting_id=$1 and ending_id=$2",
+        text: queries.UPDATE_SHABAD_INFO,
         values: [starting_id, ending_id]
     };
     client.query(query, (err, sqlResponse) => {
@@ -458,7 +447,8 @@ router.put('/setStatusToPROD', (req, res) => {
     let client = initialize_client();
     client.connect();
     client.query(queries.SET_STATUS_TO_PROD, ["PROD", recording_title, raagi_name], (req, sqlRes) => {
-        res.json("SUCCESS");
+        res.json(constants.SUCCESS_RESPONSE);
+        client.end();
     });
 });
 
@@ -467,7 +457,7 @@ router.put('/changeShabadTitle', (req, res) => {
     client.connect();
     client.query(queries.CHANGE_SHABAD_TITLE, [req.body.new_shabad_english_title,
         req.body.old_shabad_english_title], (err, sqlResponse) => {
-        res.json("Success");
+        res.json(constants.SUCCESS_RESPONSE);
         client.end();
     });
 });
@@ -477,7 +467,7 @@ router.put('/changeStartingID', (req, res) => {
     client.connect();
     client.query(queries.CHANGE_STARTING_ID, [req.body.new_starting_id,
         req.body.original_starting_id], (err, sqlResponse) => {
-        res.json("Success");
+        res.json(constants.SUCCESS_RESPONSE);
         client.end();
     });
 });
@@ -487,7 +477,7 @@ router.put('/changeEndingID', (req, res) => {
     client.connect();
     client.query(queries.CHANGE_ENDING_ID, [req.body.new_ending_id,
         req.body.original_ending_id], (err, sqlResponse) => {
-        res.json("Success");
+        res.json(constants.SUCCESS_RESPONSE);
         client.end();
     });
 });
@@ -515,26 +505,23 @@ router.put('/raagis/:raagi_name/recordings/:recording_title/addShabads', (req, r
                     ending_time = shabad.shabad_ending_time;
                 }
 
-                console.log(starting_time + "   " + ending_time);
-
                 let shabad_length = diff(starting_time, ending_time);
 
-                let shabad_info_rows = await client.query("INSERT INTO SHABAD_INFO (SATHAAYI_ID, STARTING_ID, ENDING_ID, CHECKED) VALUES ($1, $2, $3, $4) ON CONFLICT (SATHAAYI_ID) DO NOTHING RETURNING ID",
+                let shabad_info_rows = await client.query(queries.ADD_RAAGI_RECORDING_INSERT_SHABAD_INFO,
                     [shabad.sathaayi_id, shabad.starting_id, shabad.ending_id, false]);
                 if(shabad_info_rows.rows.length === 0){
-                    shabad_info_rows = await client.query("SELECT ID FROM SHABAD_INFO WHERE SATHAAYI_ID=$1", [shabad.sathaayi_id]);
+                    shabad_info_rows = await client.query(queries.ADD_RAAGI_RECORDING_SELECT_SHABAD_INFO, [shabad.sathaayi_id]);
                 }
                 shabad_info_id = shabad_info_rows.rows[0].id;
 
-                let shabad_rows = await client.query("INSERT INTO SHABAD (SATHAAYI_TITLE, SHABAD_INFO_ID) VALUES ($1, $2) ON CONFLICT (SATHAAYI_TITLE) DO NOTHING RETURNING ID",
+                let shabad_rows = await client.query(queries.ADD_RAAGI_RECORDING_INSERT_SHABAD,
                     [shabad.shabad_english_title, shabad_info_id]);
                 if(shabad_rows.rows.length === 0){
-                    shabad_rows = await client.query("SELECT ID FROM SHABAD WHERE SATHAAYI_TITLE=$1", [shabad.shabad_english_title]);
+                    shabad_rows = await client.query(queries.ADD_RAAGI_RECORDING_SELECT_SHABAD, [shabad.shabad_english_title]);
                 }
                 shabad_id = shabad_rows.rows[0].id;
 
-                await client.query("INSERT INTO RAAGI_RECORDING_SHABAD (RAAGI_ID, RECORDING_ID, SHABAD_ID, STARTING_TIME, ENDING_TIME, LENGTH, STATUS) " +
-                    "VALUES ((SELECT ID FROM RAAGI WHERE NAME = $1), (SELECT ID FROM RECORDING WHERE TITLE = $2), $3, $4, $5, $6, $7)",
+                await client.query(queries.ADD_RAAGI_RECORDING_INSERT_RAAGI_RECORDING_SHABAD,
                     [req.params.raagi_name, req.params.recording_title, shabad_id, starting_time, ending_time, shabad_length, "DEV"]);
             }
             await client.query('COMMIT');
@@ -547,40 +534,6 @@ router.put('/raagis/:raagi_name/recordings/:recording_title/addShabads', (req, r
         }
     })().catch(e => console.error(e.stack));
 });
-
-// TODO - Work on Adding shabad Themes
-/*
-router.get('/shabads/:sathaayi_id/themes', (req, res) => {
-    let client = initialize_client();
-    client.connect();
-    let query = {
-        text: "select * from shabad_info_theme where sathaayi_id=$1",
-        values: [req.params.sathaayi_id]
-    };
-    client.query(query, (err, sqlResponse) => {
-        let shabad_themes = [];
-        for(let row of sqlResponse.rows){
-            shabad_themes.push(row.theme_name);
-        }
-        res.send(shabad_themes);
-        client.end();
-    });
-});
-
-
-router.put('/addShabadThemes/:shabad_english_title', (req, res) => {
-    let shabad_english_title = req.params.shabad_english_title;
-    let themes = req.body.themes;
-
-    Shabad.update({"shabad_english_title": shabad_english_title}, {$set: {"shabad_theme": themes}}, function(error, numAffected){
-       if(error){
-           throw error;
-       } else{
-           res.json("Successfull");
-       }
-    });
-});
-*/
 
 function initialize_client(){
     return new Client(config.vismaadnaad);
@@ -612,7 +565,7 @@ function upload_shabad(shabad_english_title, raagi_name, res){
     let s3 = new AWS.S3();
     fs.readFile(shabad_english_title + ".mp3", function(err, data){
         if(err){
-            console.log(err);
+            console.log(err.stack);
         } else{
             let params = {
                 Bucket: "vismaadnaad/Raagis/" + raagi_name,
@@ -625,7 +578,7 @@ function upload_shabad(shabad_english_title, raagi_name, res){
                 if(err) throw err;
                 fs.unlink(shabad_english_title + ".mp3");
                 fs.unlink(shabad_english_title + " temp.mp3");
-                res.json("Shabad uploaded!")
+                res.json(shabad_english_title + "  ==> shabad uploaded!")
             });
         }
     });

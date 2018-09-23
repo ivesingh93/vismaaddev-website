@@ -15,7 +15,7 @@ export class RestService{
   private ADD_RAAGI_RECORDING_URL = this.LOCALHOST +  "/api/raagiRoutes/addRaagiRecording";
   private GET_LINES_URL = this.LOCALHOST +  "/api/sggsRoutes/linesWithInitials/";
   private GET_RANGE_LINES = this.LOCALHOST +  "/api/sggsRoutes/linesFrom/";
-  private GET_SHABAD_LINES = this.LOCALHOST +  "/api/sggsRoutes/shabadLines/"
+  private GET_SHABAD_LINES = this.LOCALHOST +  "/api/sggsRoutes/shabadLines/";
   private GET_SHABADS_URL = this.LOCALHOST +  "/api/raagiRoutes/shabads";
   private GET_RECORDINGS_BY_RAAGI = this.LOCALHOST +  "/api/raagiRoutes/raagis/";
   private ADD_SHABADS_BY_RECORDING = this.LOCALHOST +  "/api/raagiRoutes/raagis/";

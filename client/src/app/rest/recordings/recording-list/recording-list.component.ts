@@ -36,12 +36,11 @@ export class RecordingListComponent implements OnInit {
   }
 
   getShabads(){
-    let componentThis = this;
     this.restService.getShabads()
-      .then(function(data){
-        componentThis.shabadListObj = data;
+      .then(data => {
+        this.shabadListObj = data;
         for(let shabad of data){
-          componentThis.allShabadList.push(shabad.shabad_english_title)
+          this.allShabadList.push(shabad.shabad_english_title)
         }
       })
       .catch(error => console.log(error));
@@ -49,14 +48,13 @@ export class RecordingListComponent implements OnInit {
 
   onShabadTitleSelected(shabad){
     this.panktiList = [];
-    let componentThis = this;
     for(let shabadObj of this.shabadListObj){
       if(shabad === shabadObj.shabad_english_title){
         this.restService.getRangeLines(shabadObj.starting_id, shabadObj.ending_id)
-          .then(function(data){
+          .then(data => {
             let completeShabadObj = data;
             for(let panktiObj of completeShabadObj){
-              componentThis.panktiList.push(panktiObj['Gurmukhi'])
+              this.panktiList.push(panktiObj['Gurmukhi'])
             }
           })
           .catch(error => console.log(error));

@@ -71,7 +71,7 @@ export class UploadShabadsComponent implements OnInit {
   uploadRecordingToAWS(){
     this.toastrService.warning('', "Please wait while recording is being uploaded...", this.config);
     this.restService.uploadRecording(this.selected_raagi, this.selected_recording_url, this.selected_recording_title)
-      .then(data =>  this.toastrService.success('', 'Recording uploaded successfully!', this.config))
+      .then(data =>  this.toastrService.success('', this.selected_recording_url + ' ==> recording uploaded successfully!', this.config))
       .catch(error =>  this.toastrService.error('', 'Recording uploading failed!', this.config));
   };
 
@@ -100,11 +100,10 @@ export class UploadShabadsComponent implements OnInit {
     this.more_lines_starting_id = this.selected_shabad_obj['starting_id'];
     this.more_lines_ending_id = this.selected_shabad_obj['ending_id'];
 
-    let componentThis = this;
     this.restService.getRangeLines(this.more_lines_starting_id, this.more_lines_ending_id)
-      .then(function(data){
+      .then(data => {
         for(let panktiObj of data){
-          componentThis.shabad_panktis.push(panktiObj['Gurmukhi'])
+          this.shabad_panktis.push(panktiObj['Gurmukhi'])
         }
       })
       .catch(error => console.log(error));
@@ -112,13 +111,12 @@ export class UploadShabadsComponent implements OnInit {
 
   showMoreLines(){
     this.shabad_panktis = [];
-    let componentThis = this;
     this.more_lines_starting_id -= 2;
     this.more_lines_ending_id += 2;
     this.restService.getRangeLines(this.more_lines_starting_id, this.more_lines_ending_id)
-      .then(function(data){
+      .then(data => {
         for(let panktiObj of data){
-          componentThis.shabad_panktis.push(panktiObj['Gurmukhi'])
+          this.shabad_panktis.push(panktiObj['Gurmukhi'])
         }
       })
       .catch(error => console.log(error));
@@ -126,13 +124,12 @@ export class UploadShabadsComponent implements OnInit {
 
   removeExtraLines(){
     this.shabad_panktis = [];
-    let componentThis = this;
     this.more_lines_starting_id = this.selected_shabad_obj['starting_id'];
     this.more_lines_ending_id = this.selected_shabad_obj['ending_id'];
     this.restService.getRangeLines(this.more_lines_starting_id, this.more_lines_ending_id)
-      .then(function(data){
+      .then(data => {
         for(let panktiObj of data){
-          componentThis.shabad_panktis.push(panktiObj['Gurmukhi'])
+          this.shabad_panktis.push(panktiObj['Gurmukhi'])
         }
       })
       .catch(error => console.log(error));
@@ -140,20 +137,20 @@ export class UploadShabadsComponent implements OnInit {
 
   changeShabadTitle(){
     this.restService.changeShabadTitle(this.selected_shabad_obj['shabad_english_title'], this.selected_shabad_english_title)
-      .then(data => this.toastrService.success('', data.toString(), this.config))
+      .then(data => this.toastrService.success('', data['Result'].toString(), this.config))
       .catch(error => console.log(error));
   }
 
   changeStartingID(){
     this.restService.changeStartingID(this.selected_shabad_obj['starting_id'], this.selected_shabad_starting_id)
-      .then(data => this.toastrService.success('', data.toString(), this.config))
+      .then(data => this.toastrService.success('', data['Result'].toString(), this.config))
       .catch(error => console.log(error));
 
   }
 
   changeEndingID(){
     this.restService.changeEndingID(this.selected_shabad_obj['ending_id'], this.selected_shabad_ending_id)
-      .then(data => this.toastrService.success('', data.toString(), this.config))
+      .then(data => this.toastrService.success('', data['Result'].toString(), this.config))
       .catch(error => console.log(error));
   }
 

@@ -101,15 +101,12 @@ router.post('/authenticate', (req, res) => {
     let client = initialize_client();
     client.connect();
     let query = {};
-    console.log("hello1");
     if(source_of_account.toLowerCase() === "email"){
-        console.log("hello2");
         query = {
             text: queries.AUTHENTICATE_EMAIL,
             values: [account_id, username]
         };
     }else if(source_of_account.toLowerCase() === "facebook" || source_of_account === "gmail"){
-        console.log("hello3");
         query = {
             text: queries.AUTHENTICATE_NO_EMAIL,
             values: [account_id]
@@ -118,7 +115,6 @@ router.post('/authenticate', (req, res) => {
 
     client.query(query, (err, sqlResponse) => {
        if(err){
-           console.log(err);
            res.send("Failure");
        } else{
            if(sqlResponse.rowCount > 0){
@@ -194,7 +190,7 @@ router.post('/deletePlaylist', (req, res) => {
     client.connect();
     client.query(queries.DELETE_PLAYLIST, [req.body.playlist_name, req.body.username], (err, sqlResponse) => {
         if(err){
-            console.log(err);
+            console.log(err.stack);
             res.json({
                 "ResponseCode": 400,
                 "Message": "Error deleting playlist"
@@ -262,8 +258,6 @@ router.post('/likeShabad', (req, res) => {
             let username = req.body.username;
             let rrs_id = req.body.id;
 
-            console.log(req.body);
-
             await client.query(queries.LIKE_SHABAD, [rrs_id, username]);
 
             await client.query(queries.LIKE_SHABAD_UPDATE_RAAGI_RECORDING_SHABAD, [rrs_id]);
@@ -290,8 +284,6 @@ router.post('/unlikeShabad', (req, res) => {
             let username = req.body.username;
             let rrs_id = req.body.id;
 
-            console.log(req.body);
-
             await client.query(queries.UNLIKE_SHABAD, [rrs_id, username]);
 
             await client.query(queries.UNLIKE_SHABAD_UPDATE_RAAGI_RECORDING_SHABAD, [rrs_id]);
@@ -315,7 +307,6 @@ router.get('/shabadLikes/:id', (req, res) => {
     client.connect();
     client.query(queries.SHABAD_LIKES, [req.params.id], (err, sqlResponse) => {
         if(err){
-            console.log(err);
             res.json({
                 "ResponseCode": 400,
                 "Result": "Failure"
@@ -323,6 +314,7 @@ router.get('/shabadLikes/:id', (req, res) => {
         }else{
             res.json(sqlResponse.rows[0]);
         }
+        client.end();
     });
 });
 
@@ -331,7 +323,7 @@ router.get('/members/:username/shabadLikes/:id', (req, res) => {
    client.connect();
    client.query(queries.MEMBERS_SHABAD_LIKES, [req.params.id, req.params.username], (err, sqlRes) => {
       if(err){
-          console.log(err);
+          console.log(err.stack);
           res.json({
               "ResponseCode": 400,
               "Result": "Failure"
@@ -349,12 +341,12 @@ router.get('/members/:username/shabadLikes/:id', (req, res) => {
               });
           }
       }
+      client.end();
    });
 });
 
 
 router.get('/users/:username/playlists', (req, res) => {
-    console.log(req.params.username);
     let client = initialize_client();
     client.connect();
     let query = {
@@ -363,7 +355,7 @@ router.get('/users/:username/playlists', (req, res) => {
     };
     client.query(query, (err, sqlResponse) => {
         if(err){
-            console.log(err);
+            console.log(err.stack);
             res.json('Failure');
         }else{
             res.send(sqlResponse.rows);
@@ -381,11 +373,10 @@ router.get('/users/:username/playlists/:playlist_name', (req, res) => {
     };
     client.query(query, (err, sqlResponse) => {
         if(err){
-            console.log(err);
+            console.log(err.stack);
             res.json('Failure');
         }else{
             res.send(sqlResponse.rows);
-            console.log(sqlResponse);
         }
         client.end();
     });
