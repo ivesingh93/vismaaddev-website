@@ -108,7 +108,7 @@ export class RecordingFormComponent implements OnInit {
         this.sathaayiLines = data.map(pankti => {
           let obj = {
             id: pankti['ID'],
-            text: "<span style='font-family: GurbaniLipi; font-size: 19px'>" + pankti['Gurmukhi'] + "</span>",
+            text: "<span style='font-family: Gurbanilipi; font-size: 19px'>" + pankti['Gurmukhi'] + "</span>",
             gurbani_pankti: pankti['Gurmukhi'],
             kirtan_id: pankti['Kirtan_ID']
           };

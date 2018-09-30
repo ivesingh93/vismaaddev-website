@@ -435,8 +435,7 @@ router.post('/uploadShabad', (req, res) => {
         values: [starting_id, ending_id]
     };
     client.query(query, (err, sqlResponse) => {
-        upload_shabad(shabad_english_title, raagi_name, res);
-        client.end();
+        upload_shabad(shabad_english_title, raagi_name, res, client);
     });
 });
 
@@ -487,7 +486,7 @@ router.put('/raagis/:raagi_name/recordings/:recording_title/addShabads', (req, r
     (async () => {
         const client = await initialize_pool().connect();
         try{
-            let shabad_info_id, shabad_id;
+            let raagi_id, recording_id, shabad_info_id, shabad_id;
             await client.query('BEGIN');
             for(let shabad of req.body.shabads){
 
@@ -507,6 +506,12 @@ router.put('/raagis/:raagi_name/recordings/:recording_title/addShabads', (req, r
 
                 let shabad_length = diff(starting_time, ending_time);
 
+                let raagi_rows = await client.query(queries.ADD_RAAGI_RECORDING_SELECT_RAAGI, [req.params.raagi_name]);
+                raagi_id = raagi_rows.rows[0].id;
+
+                let recording_rows = await client.query(queries.ADD_RAAGI_RECORDING_SELECT_RECORDING, [req.params.recording_title]);
+                recording_id = recording_rows.rows[0].id;
+
                 let shabad_info_rows = await client.query(queries.ADD_RAAGI_RECORDING_INSERT_SHABAD_INFO,
                     [shabad.sathaayi_id, shabad.starting_id, shabad.ending_id, false]);
                 if(shabad_info_rows.rows.length === 0){
@@ -522,7 +527,7 @@ router.put('/raagis/:raagi_name/recordings/:recording_title/addShabads', (req, r
                 shabad_id = shabad_rows.rows[0].id;
 
                 await client.query(queries.ADD_RAAGI_RECORDING_INSERT_RAAGI_RECORDING_SHABAD,
-                    [req.params.raagi_name, req.params.recording_title, shabad_id, starting_time, ending_time, shabad_length, "DEV"]);
+                    [raagi_id, recording_id, shabad_id, starting_time, ending_time, shabad_length, "DEV"]);
             }
             await client.query('COMMIT');
             res.json("Success!");
@@ -561,26 +566,28 @@ function diff(start, end) {
     }
 }
 
-function upload_shabad(shabad_english_title, raagi_name, res){
+function upload_shabad(shabad_english_title, raagi_name, res, client){
     let s3 = new AWS.S3();
-    fs.readFile(shabad_english_title + ".mp3", function(err, data){
-        if(err){
-            console.log(err.stack);
-        } else{
-            let params = {
-                Bucket: "vismaadnaad/Raagis/" + raagi_name,
-                Key: shabad_english_title + ".mp3",
-                Body: data,
-                ACL:'public-read',
-                ContentType: "audio/mpeg"
-            };
-            s3.putObject(params, function(err, data){
-                if(err) throw err;
-                fs.unlink(shabad_english_title + ".mp3");
-                fs.unlink(shabad_english_title + " temp.mp3");
-                res.json(shabad_english_title + "  ==> shabad uploaded!")
+    fs.readFile(shabad_english_title + ".mp3", (err, data) =>{
+        if (err) throw err;
+        let params = {
+            Bucket: "vismaadnaad/Raagis/" + raagi_name,
+            Key: shabad_english_title + ".mp3",
+            Body: data,
+            ACL:'public-read',
+            ContentType: "audio/mpeg"
+        };
+        s3.putObject(params, function(err, data){
+            if(err) throw err;
+            fs.unlink(shabad_english_title + ".mp3", err => {
+                if (err) throw err;
             });
-        }
+            fs.unlink(shabad_english_title + " temp.mp3", err => {
+                if (err) throw err;
+            });
+            res.json(shabad_english_title + "  ==> shabad uploaded!");
+            client.end();
+        });
     });
 }
 
