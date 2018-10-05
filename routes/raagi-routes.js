@@ -9,6 +9,79 @@ const config = require('../config/database');
 const queries = require('../config/queries');
 const constants = require('../config/constants');
 
+/*
+    APIs for MOBILE APP
+ */
+
+// *********************************************************************************************************************
+
+router.get('/homePage', (req, res) => {
+    (async () => {
+        const client = await initialize_pool().connect();
+        try{
+            await client.query ('BEGIN');
+
+            let popularShabads = (await client.query(queries.POPULAR_SHABADS)).rows;
+            let recentlyAddedShabads = (await client.query(queries.RECENTLY_ADDED_SHABADS)).rows;
+            let raagisInfo = processRaagiInfo( ((await client.query(queries.RAAGI_INFO)).rows) );
+
+            res.send({
+                popularShabads,
+                recentlyAddedShabads,
+                raagisInfo
+            });
+            await client.query('COMMIT');
+        }catch(e){
+            await client.query('ROLLBACK');
+            throw e
+        }finally{
+            client.release();
+        }
+    })().catch(e => console.error(e.stack));
+
+});
+
+router.get('/popularShabads', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    client.query(queries.POPULAR_SHABADS , (err, sqlResponse) => {
+        res.send(sqlResponse.rows);
+        client.end();
+    });
+});
+
+router.get('/recentlyAddedShabads', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    client.query(queries.RECENTLY_ADDED_SHABADS , (err, sqlResponse) => {
+        res.send(sqlResponse.rows);
+        client.end();
+    });
+});
+
+router.get('/raagi_info', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    const query = queries.RAAGI_INFO;
+    client.query(query, (err, sqlResponse) => {
+        let raagis_info = [];
+        for(let raagi of sqlResponse.rows){
+            let hhmmss = raagi.total_length.split(':');
+            let minutes = (parseInt(hhmmss[0]*60)) + (parseInt(hhmmss[1]));
+
+            raagi.raagi_id = parseInt(raagi.raagi_id);
+            raagi.shabads_count = parseInt(raagi.shabads_count);
+            raagi.minutes_of_shabads = minutes;
+            delete raagi.total_length;
+            raagis_info.push(raagi);
+        }
+        res.send(raagis_info);
+        client.end();
+    });
+});
+
+// *********************************************************************************************************************
+
 router.get('/raagiNames', (req, res) =>{
     let client = initialize_client();
     client.connect();
@@ -57,27 +130,6 @@ router.get('/recentRecordings', (req, res) => {
             recent_recordings.push(row.title);
         }
         res.send(recent_recordings);
-        client.end();
-    });
-});
-
-router.get('/raagi_info', (req, res) => {
-    let client = initialize_client();
-    client.connect();
-    const query = queries.RAAGI_INFO;
-    client.query(query, (err, sqlResponse) => {
-        let raagis_info = [];
-        for(let raagi of sqlResponse.rows){
-            let hhmmss = raagi.total_length.split(':');
-            let minutes = (parseInt(hhmmss[0]*60)) + (parseInt(hhmmss[1]));
-
-            raagi.raagi_id = parseInt(raagi.raagi_id);
-            raagi.shabads_count = parseInt(raagi.shabads_count);
-            raagi.minutes_of_shabads = minutes;
-            delete raagi.total_length;
-            raagis_info.push(raagi);
-        }
-        res.send(raagis_info);
         client.end();
     });
 });
@@ -281,7 +333,7 @@ router.get('/shabadListeners/:id', (req, res) => {
     });
 });
 
-router.post('/shabadListeners', (req, res) => {
+router.put('/shabadListeners', (req, res) => {
     let client = initialize_client();
     client.connect();
 
@@ -292,6 +344,7 @@ router.post('/shabadListeners', (req, res) => {
         }else{
             res.json(constants.SUCCESS_RESPONSE)
         }
+        client.end();
     });
 });
 
@@ -539,6 +592,21 @@ router.put('/raagis/:raagi_name/recordings/:recording_title/addShabads', (req, r
         }
     })().catch(e => console.error(e.stack));
 });
+
+function processRaagiInfo(rows){
+    let raagis_info = [];
+    for(let raagi of rows){
+        let hhmmss = raagi.total_length.split(':');
+        let minutes = (parseInt(hhmmss[0]*60)) + (parseInt(hhmmss[1]));
+
+        raagi.raagi_id = parseInt(raagi.raagi_id);
+        raagi.shabads_count = parseInt(raagi.shabads_count);
+        raagi.minutes_of_shabads = minutes;
+        delete raagi.total_length;
+        raagis_info.push(raagi);
+    }
+    return raagis_info
+}
 
 function initialize_client(){
     return new Client(config.vismaadnaad);
