@@ -80,7 +80,30 @@ router.get('/raagi_info', (req, res) => {
     });
 });
 
+// NOTE: If the length is greater than 59 minutes, then to_char() needs to have HH12:MI:SS
+router.get('/raagis/:raagi_name/shabads', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    let query = {
+        text: queries.RAAGIS_SHABADS,
+        values: [req.params.raagi_name]
+    };
+    client.query(query, (err, sqlResponse) => {
+        res.send(sqlResponse.rows);
+        client.end();
+    });
+});
+
 // *********************************************************************************************************************
+
+router.get('/totalShabadListeners', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    client.query(queries.TOTAL_SHABAD_LISTENERS, (err, sqlRes) => {
+        res.json(sqlRes.rows);
+        client.end();
+    });
+});
 
 router.get('/raagiNames', (req, res) =>{
     let client = initialize_client();
@@ -204,20 +227,6 @@ router.get('/raagis/:raagi_name/recordingsInfo', (req, res) =>{
     client.connect();
     let query = {
         text: queries.RAAGIS_RECORDINGS_INFO,
-        values: [req.params.raagi_name]
-    };
-    client.query(query, (err, sqlResponse) => {
-        res.send(sqlResponse.rows);
-        client.end();
-    });
-});
-
-// NOTE: If the length is greater than 59 minutes, then to_char() needs to have HH12:MI:SS
-router.get('/raagis/:raagi_name/shabads', (req, res) => {
-    let client = initialize_client();
-    client.connect();
-    let query = {
-        text: queries.RAAGIS_SHABADS,
         values: [req.params.raagi_name]
     };
     client.query(query, (err, sqlResponse) => {
