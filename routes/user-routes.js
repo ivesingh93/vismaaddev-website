@@ -302,6 +302,40 @@ router.post('/unlikeShabad', (req, res) => {
     })().catch(e => console.error(e.stack));
 });
 
+router.post('/updateShabadLike', (req, res) => {
+
+    (async () => {
+        const client = await initialize_pool().connect();
+        try{
+            await client.query('BEGIN');
+            let username = req.body.username;
+            let rrs_id = req.body.id;
+            let like = req.body.like;
+
+            if(like){
+                await client.query(queries.LIKE_SHABAD, [rrs_id, username]);
+                await client.query(queries.LIKE_SHABAD_UPDATE_RAAGI_RECORDING_SHABAD, [rrs_id]);
+            }else{
+                await client.query(queries.UNLIKE_SHABAD, [rrs_id, username]);
+                await client.query(queries.UNLIKE_SHABAD_UPDATE_RAAGI_RECORDING_SHABAD, [rrs_id]);
+            }
+
+            await client.query('COMMIT');
+            res.json({
+                "ResponseCode": 200,
+                "Message": "Success"
+            })
+        }catch(e){
+            await client.query('ROLLBACK');
+            throw e;
+        }finally{
+            client.release();
+        }
+    })().catch(e => console.error(e.stack));
+
+
+});
+
 router.get('/shabadLikes/:id', (req, res) => {
     let client = initialize_client();
     client.connect();
