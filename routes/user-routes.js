@@ -336,6 +336,26 @@ router.post('/updateShabadLike', (req, res) => {
 
 });
 
+router.post('/feedback', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    client.query(queries.ADD_FEEDBACK, [req.body.feedback, req.body.username], (err, sqlResponse) => {
+        if(err){
+            console.log(err.stack);
+            res.json({
+                "ResponseCode": 400,
+                "Message": "Error submitting feedback"
+            });
+        }else{
+            res.json({
+                "ResponseCode": 200,
+                "Message": "Feedback submitted successfully"
+            });
+        }
+        client.end();
+    });
+});
+
 router.get('/shabadLikes/:id', (req, res) => {
     let client = initialize_client();
     client.connect();
