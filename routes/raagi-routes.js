@@ -8,7 +8,7 @@ const { Pool, Client } = require('pg');
 const config = require('../config/database');
 const queries = require('../config/queries');
 const constants = require('../config/constants');
-
+const shuffle = require('shuffle-array');
 /*
     APIs for MOBILE APP
  */
@@ -21,13 +21,13 @@ router.get('/homePage', (req, res) => {
         try{
             await client.query ('BEGIN');
 
-            let popularShabads = (await client.query(queries.POPULAR_SHABADS)).rows;
-            let recentlyAddedShabads = (await client.query(queries.RECENTLY_ADDED_SHABADS)).rows;
-            let raagisInfo = processRaagiInfo( ((await client.query(queries.RAAGI_INFO)).rows) );
+            let popularShabads = shuffle.pick((await client.query(queries.POPULAR_SHABADS, [25])).rows, {picks: 5});
+            //let recentlyAddedShabads = (await client.query(queries.RECENTLY_ADDED_SHABADS)).rows;
+            let raagisInfo = shuffle.pick(processRaagiInfo( ((await client.query(queries.HOME_PAGE_RAAGI_INFO)).rows)), {picks: 6});
 
             res.send({
                 popularShabads,
-                recentlyAddedShabads,
+                //recentlyAddedShabads,
                 raagisInfo
             });
             await client.query('COMMIT');
@@ -44,7 +44,7 @@ router.get('/homePage', (req, res) => {
 router.get('/popularShabads', (req, res) => {
     let client = initialize_client();
     client.connect();
-    client.query(queries.POPULAR_SHABADS , (err, sqlResponse) => {
+    client.query(queries.POPULAR_SHABADS, [50], (err, sqlResponse) => {
         res.send(sqlResponse.rows);
         client.end();
     });

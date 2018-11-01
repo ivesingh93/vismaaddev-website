@@ -1,14 +1,20 @@
 module.exports = {
     KATHAVAACHAKS: "select name from raagi where type = 'Kathavaachak' order by name",
 
+    POPULAR_SHABADS: "select rrs.id, rrs.listeners, shabad.sathaayi_title as shabad_english_title, shabad_info.sathaayi_id, shabad_info.starting_id, shabad_info.ending_id, raagi.name as raagi_name, raagi.image_url, concat('https://s3.eu-west-2.amazonaws.com/vismaadnaad/Raagis/',raagi.name, '/', shabad.sathaayi_title, '.mp3') as shabad_url, to_char(rrs.length, 'MI:SS') as shabad_length from raagi_recording_shabad as rrs join shabad on rrs.shabad_id = shabad.id join shabad_info on shabad.shabad_info_id = shabad_info.id join recording on rrs.recording_id = recording.id join raagi on rrs.raagi_id = raagi.id order by rrs.listeners DESC limit $1",
+
+    HOME_PAGE_RAAGI_INFO: "select row_number() over(order by raagi.name) as raagi_id, raagi.name as raagi_name, raagi.image_url as raagi_image_url, count(rrs.shabad_id) as shabads_count, to_char(sum(rrs.length), 'HH24:MI:SS') as total_length from raagi join raagi_recording_shabad as rrs ON raagi.id=rrs.raagi_id where rrs.status = 'PROD' group by raagi.id order by shabads_count desc limit 20",
 
 
     RAAGI_NAMES: "select name from raagi where type = 'Raagi' order by name",
     RECORDING_URLS: "select url from recording order by url",
     RECENT_RECORDINGS: "select title from recording order by date_added desc limit 20",
-    POPULAR_SHABADS: "select rrs.id, rrs.listeners, shabad.sathaayi_title as shabad_english_title, shabad_info.sathaayi_id, shabad_info.starting_id, shabad_info.ending_id, raagi.name as raagi_name, raagi.image_url, concat('https://s3.eu-west-2.amazonaws.com/vismaadnaad/Raagis/',raagi.name, '/', shabad.sathaayi_title, '.mp3') as shabad_url, to_char(rrs.length, 'MI:SS') as shabad_length from raagi_recording_shabad as rrs join shabad on rrs.shabad_id = shabad.id join shabad_info on shabad.shabad_info_id = shabad_info.id join recording on rrs.recording_id = recording.id join raagi on rrs.raagi_id = raagi.id where rrs.listeners > 1 order by rrs.listeners DESC",
+
     RECENTLY_ADDED_SHABADS: "select rrs.id, r.name as raagi_name, r.image_url, s.sathaayi_title as shabad_english_title, shabad_info.sathaayi_id, shabad_info.starting_id, shabad_info.ending_id, concat('https://s3.eu-west-2.amazonaws.com/vismaadnaad/Raagis/',r.name, '/', s.sathaayi_title, '.mp3') as shabad_url, to_char(rrs.length, 'MI:SS') as shabad_length from raagi_recording_shabad as rrs join raagi as r on r.id = rrs.raagi_id join shabad as s on rrs.shabad_id = s.id join shabad_info on s.shabad_info_id = shabad_info.id where rrs.date_added between (now() - interval '7 day') and now() order by r.name",
     RAAGI_INFO: "select row_number() over(order by raagi.name) as raagi_id, raagi.name as raagi_name, raagi.image_url as raagi_image_url, count(rrs.shabad_id) as shabads_count, to_char(sum(rrs.length), 'HH24:MI:SS') as total_length from raagi join raagi_recording_shabad as rrs ON raagi.id=rrs.raagi_id where rrs.status = 'PROD' group by raagi.id",
+
+
+
     SHABADS: "select shabad.sathaayi_title as shabad_english_title, shabad_info.sathaayi_id, shabad_info.starting_id, shabad_info.ending_id, shabad_info.checked as shabad_checked from shabad join shabad_info on shabad.shabad_info_id = shabad_info.id order by shabad.sathaayi_title",
     SHABADS_BY_SATHAAYI_ID: "select shabad.id, shabad.sathaayi_title as shabad_english_title, shabad.shabad_info_id, shabad_info.sathaayi_id, shabad_info.starting_id, shabad_info.ending_id, shabad_info.checked from shabad join shabad_info on shabad.shabad_info_id = shabad_info.id where shabad_info.sathaayi_id=$1 order by shabad.sathaayi_title",
     SHABADS_BY_SATHAAYI_TITLE: "select * from shabad where sathaayi_title = $1",

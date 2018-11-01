@@ -3,8 +3,8 @@ import {Http, Response, Headers, RequestOptions} from '@angular/http';
 import 'rxjs/add/operator/toPromise';
 import * as AWS from 'aws-sdk/global';
 import * as S3 from 'aws-sdk/clients/s3';
-import {RestConstants} from "./rest-constants";
 import {ToastConfig, ToastrService} from "ngx-toastr";
+import {RestConstants} from "./rest-constants";
 
 @Injectable()
 export class RestService{

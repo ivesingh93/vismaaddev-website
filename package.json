@@ -21,6 +21,7 @@
     "passport-jwt": "*",
     "pg": "^7.4.3",
     "request": "^2.83.0",
+    "shuffle-array": "^1.0.1",
     "sqlite3": "^3.1.13",
     "trimp3": "^0.1.2",
     "typescript": "^2.2.2",
