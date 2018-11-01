@@ -46,7 +46,7 @@ module.exports = {
     UPDATE_SHABAD_INFO: "update shabad_info set checked=true where starting_id=$1 and ending_id=$2",
     TOTAL_SHABAD_LISTENERS: "select sum(listeners) as listeners from raagi_recording_shabad",
 
-    ADD_FEEDBACK: "insert into feedback (feedback, member_id) values ($1,(select id from member where LOWER(username) LIKE LOWER($2)))",
+    ADD_FEEDBACK: "insert into feedback (feedback, member_id) values ($1, (select id from member where LOWER(username) LIKE LOWER($2)))",
 
 
     SIGNUP_EMAIL: "insert into member (account_id, username, password_hash, first_name, last_name, source_of_account) values ($1, $2, $3, $4, $5, $6)",
