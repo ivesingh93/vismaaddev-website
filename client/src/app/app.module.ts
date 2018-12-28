@@ -16,7 +16,6 @@ import {MatChipsModule, MatTabsModule} from '@angular/material';
 
 import { DatePickerModule } from 'ng2-datepicker';
 import { SelectModule } from 'ng2-select';
-import { MultiselectDropdownModule } from 'angular-2-dropdown-multiselect';
 import { ToastrModule } from 'ngx-toastr';
 import { TreeModule } from 'angular-tree-component';
 import {MatListModule} from '@angular/material';
@@ -68,7 +67,6 @@ const appRoutes: Routes = [
     SelectModule,
     ToastrModule.forRoot(),
     BrowserAnimationsModule,
-    MultiselectDropdownModule,
     TreeModule,
     RouterModule.forRoot(appRoutes),
     NgbModule.forRoot(),

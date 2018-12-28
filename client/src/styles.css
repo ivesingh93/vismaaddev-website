@@ -1,6 +1,11 @@
 /* You can add global styles to this file, and also import other style files */
 
 /* Master Styles */
+@font-face {
+  font-family: GurbaniLipi;
+  src: url(~assets/fonts/gurblipi_.ttf);
+}
+
 h1 {
   color: #369;
   font-family: Arial, Helvetica, sans-serif;
