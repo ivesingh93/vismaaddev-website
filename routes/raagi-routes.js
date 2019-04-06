@@ -418,9 +418,9 @@ router.post('/addRaagiRecording', (req, res) =>{
 
 
                 let shabad_rows = await client.query(queries.ADD_RAAGI_RECORDING_INSERT_SHABAD,
-                    [shabad.shabad_english_title, shabad_info_id]);
+                    [shabad.shabad_english_title.trim(), shabad_info_id]);
                 if(shabad_rows.rows.length === 0){
-                    shabad_rows = await client.query(queries.ADD_RAAGI_RECORDING_SELECT_SHABAD, [shabad.shabad_english_title]);
+                    shabad_rows = await client.query(queries.ADD_RAAGI_RECORDING_SELECT_SHABAD, [shabad.shabad_english_title.trim()]);
                 }
                 shabad_id = shabad_rows.rows[0].id;
 
@@ -454,7 +454,7 @@ router.post('/uploadRecording', (req, res) => {
 
 // Check if new shabad's checked field is set to true when new shabad is uploaded
 router.post('/uploadShabad', (req, res) => {
-    let shabad_english_title = req.body.shabad.shabad_english_title;
+    let shabad_english_title = req.body.shabad.shabad_english_title.trim();
     let shabad_starting_time = req.body.shabad.shabad_starting_time;
     let shabad_ending_time = req.body.shabad.shabad_ending_time;
     let shabad_sathaayi_id = req.body.shabad.sathaayi_id;
@@ -466,14 +466,12 @@ router.post('/uploadShabad', (req, res) => {
 
     let shabad_starting_time_arr = shabad_starting_time.split(":");
     let shabad_ending_time_arr = shabad_ending_time.split(":");
-
     if((parseInt(shabad_starting_time_arr[0]) >= 60) && (parseInt(shabad_ending_time_arr[0]) >= 60)){
         shabad_starting_time = "01:" + ('0' + (parseInt(shabad_starting_time_arr[0] - 60))).slice(-2) + ":" + shabad_starting_time_arr[1];
     }
     if((parseInt(shabad_ending_time_arr[0]) >= 60)){
         shabad_ending_time = "01:" + ('0' + (parseInt(shabad_ending_time_arr[0] - 60))).slice(-2) + ":" + shabad_ending_time_arr[1];
     }
-
     // Cut Audio Command with given start/end time
     let cut_audio_cmd = "ffmpeg -y -i " + replaced_recording_title + ".mp3 -ss "
         + shabad_starting_time + " -to " + shabad_ending_time
@@ -516,7 +514,7 @@ router.put('/setStatusToPROD', (req, res) => {
 router.put('/changeShabadTitle', (req, res) => {
     let client = initialize_client();
     client.connect();
-    client.query(queries.CHANGE_SHABAD_TITLE, [req.body.new_shabad_english_title,
+    client.query(queries.CHANGE_SHABAD_TITLE, [req.body.new_shabad_english_title.trim(),
         req.body.old_shabad_english_title], (err, sqlResponse) => {
         res.json(constants.SUCCESS_RESPONSE);
         client.end();
@@ -538,6 +536,26 @@ router.put('/changeEndingID', (req, res) => {
     client.connect();
     client.query(queries.CHANGE_ENDING_ID, [req.body.new_ending_id,
         req.body.original_ending_id], (err, sqlResponse) => {
+        res.json(constants.SUCCESS_RESPONSE);
+        client.end();
+    });
+});
+
+router.put('/changeStartingTime', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    client.query(queries.CHANGE_STARTING_TIME, [req.body.new_starting_time,
+        req.body.rrs_id, req.body.old_starting_time], (err, sqlResponse) => {
+        res.json(constants.SUCCESS_RESPONSE);
+        client.end();
+    });
+});
+
+router.put('/changeEndingTime', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    client.query(queries.CHANGE_ENDING_TIME, [req.body.new_ending_time,
+        req.body.rrs_id, req.body.old_ending_time], (err, sqlResponse) => {
         res.json(constants.SUCCESS_RESPONSE);
         client.end();
     });
@@ -582,9 +600,9 @@ router.put('/raagis/:raagi_name/recordings/:recording_title/addShabads', (req, r
                 shabad_info_id = shabad_info_rows.rows[0].id;
 
                 let shabad_rows = await client.query(queries.ADD_RAAGI_RECORDING_INSERT_SHABAD,
-                    [shabad.shabad_english_title, shabad_info_id]);
+                    [shabad.shabad_english_title.trim(), shabad_info_id]);
                 if(shabad_rows.rows.length === 0){
-                    shabad_rows = await client.query(queries.ADD_RAAGI_RECORDING_SELECT_SHABAD, [shabad.shabad_english_title]);
+                    shabad_rows = await client.query(queries.ADD_RAAGI_RECORDING_SELECT_SHABAD, [shabad.shabad_english_title.trim()]);
                 }
                 shabad_id = shabad_rows.rows[0].id;
 

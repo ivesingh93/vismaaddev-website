@@ -29,6 +29,8 @@ export class RestService{
   private CHANGE_SHABAD_TITLE = this.LOCALHOST + "/api/raagiRoutes/changeShabadTitle";
   private CHANGE_STARTING_ID = this.LOCALHOST + "/api/raagiRoutes/changeStartingID";
   private CHANGE_ENDING_ID = this.LOCALHOST + "/api/raagiRoutes/changeEndingID";
+  private CHANGE_STARTING_TIME = this.LOCALHOST + "/api/raagiRoutes/changeStartingTime";
+  private CHANGE_ENDING_TIME = this.LOCALHOST + "/api/raagiRoutes/changeEndingTime";
   private GET_SHABAD_BY_SATHAAYI_ID = this.LOCALHOST + "/api/raagiRoutes/shabads/";
   private GET_SHABAD_BY_SATHAAYI_TITLE = this.LOCALHOST + "/api/raagiRoutes/shabads/sathaayi_title/";
   private GET_SHABADS_WITH_NO_THEMES = this.LOCALHOST + "/api/raagiRoutes/shabadsWithNoThemes";
@@ -280,6 +282,38 @@ export class RestService{
     };
 
     return this.http.put(this.CHANGE_ENDING_ID, obj, options)
+      .toPromise()
+      .then(this.extractData)
+      .catch(this.handleError);
+  }
+
+  changeStartingTime(rrs_id, old_starting_time, new_starting_time){
+    let headers = new Headers({ 'Content-Type': 'application/json' });
+    let options = new RequestOptions({ headers: headers });
+
+    let obj = {
+      rrs_id: rrs_id,
+      old_starting_time: old_starting_time,
+      new_starting_time: new_starting_time
+    };
+
+    return this.http.put(this.CHANGE_STARTING_TIME, obj, options)
+      .toPromise()
+      .then(this.extractData)
+      .catch(this.handleError);
+  }
+
+  changeEndingTime(rrs_id, old_ending_time, new_ending_time){
+    let headers = new Headers({ 'Content-Type': 'application/json' });
+    let options = new RequestOptions({ headers: headers });
+
+    let obj = {
+      rrs_id: rrs_id,
+      old_ending_time: old_ending_time,
+      new_ending_time: new_ending_time
+    };
+
+    return this.http.put(this.CHANGE_ENDING_TIME, obj, options)
       .toPromise()
       .then(this.extractData)
       .catch(this.handleError);
