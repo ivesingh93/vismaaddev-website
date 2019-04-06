@@ -75,10 +75,18 @@
       <div class="col-md-8" *ngIf="shabad_panktis.length > 0">
 
         <div class="col-md-5 text-center">
-          <div *ngFor="let pankti of shabad_panktis">
-            <span style='font-family: GurbaniLipi; font-size: 23px; text-align: center;'>{{pankti}}</span>
+
+          <div *ngFor="let pankti of shabad_panktis; let i = index">
+            <div *ngIf="shabad_pankti_ids[i] == selected_shabad_obj['sathaayi_id']">
+              <span style='font-size: 15px; color: indianred'>{{shabad_pankti_ids[i]}}</span> &nbsp;&nbsp;&nbsp;   <span  style='font-family: GurbaniLipi; font-size: 23px; text-align: center; color: darkblue'>{{pankti}}<br></span>
+            </div>
+            <div *ngIf="shabad_pankti_ids[i] != selected_shabad_obj['sathaayi_id']">
+              <span style='font-size: 15px; color: indianred'>{{shabad_pankti_ids[i]}}</span>  &nbsp;&nbsp;&nbsp;  <span  style='font-family: GurbaniLipi; font-size: 23px; text-align: center;'>{{pankti}}<br></span>
+            </div>
           </div>
+
           <br><br><br>
+
           <div *ngIf="selected_shabad_obj['shabad_checked']">
             <span style="font-size:5.5em;" class="glyphicon glyphicon-ok"></span>
           </div>
@@ -123,9 +131,20 @@
           <audio #shabadPlayer style="width:100%; height: 50%;" controls src="{{selected_shabad_url}}" preload=”auto” (keyup.enter)="onKey($event)">
             HTML5 audio not supported
           </audio>
+          <span style='color: indianred; font-size: 20px; text-align: center;'>Raagi Recording Shabad ID: {{selected_shabad_obj['id']}}</span><br>
           <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Length: {{selected_shabad_obj['shabad_length']}}</span><br>
-          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Starting Time: {{selected_shabad_obj['shabad_starting_time'].replace(':', '')}}</span><br>
-          <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Ending Time: {{selected_shabad_obj['shabad_ending_time'].replace(':', '')}}</span><br>
+
+          <!--<span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Starting Time: {{selected_shabad_obj['shabad_starting_time'].replace(':', '')}}</span>-->
+
+          <br>
+          <input type="text"  style="width:250px;" [(ngModel)]="selected_shabad_starting_time">&nbsp;
+          <button class="btn btn-primary btn-md" type="button" (click)="changeStartingTime()">Change Starting Time</button>&nbsp;
+          <br><br>
+
+          <input type="text"  style="width:250px;" [(ngModel)]="selected_shabad_ending_time">&nbsp;
+          <button class="btn btn-primary btn-md" type="button" (click)="changeEndingTime()">Change Ending Time</button>&nbsp;
+          <br>
+
           <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Sathaayi ID: {{selected_shabad_obj['sathaayi_id']}}</span><br>
           <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Starting ID: {{selected_shabad_obj['starting_id']}}</span><br>
           <span style='color: indianred; font-size: 20px; text-align: center;'>Shabad Ending ID: {{selected_shabad_obj['ending_id']}}</span><br>

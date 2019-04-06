@@ -13,6 +13,7 @@ export class UploadShabadsComponent implements OnInit {
   recording_titles = [];
   shabad_english_titles = [];
   shabad_panktis = [];
+  shabad_pankti_ids = [];
 
   recordings_obj = [];
   shabads_obj = [];
@@ -25,6 +26,8 @@ export class UploadShabadsComponent implements OnInit {
   selected_shabad_url = "";
   selected_shabad_starting_id = 0;
   selected_shabad_ending_id = 0;
+  selected_shabad_starting_time = "";
+  selected_shabad_ending_time = "";
 
   more_lines_starting_id = 0;
   more_lines_ending_id = 0;
@@ -83,6 +86,7 @@ export class UploadShabadsComponent implements OnInit {
 
   onShabadSelected(value){
     this.shabad_panktis = [];
+    this.shabad_pankti_ids = [];
     this.selected_shabad_url = "https://s3.eu-west-2.amazonaws.com/vismaadnaad/Raagis/";
     let selectedShabad = value['text'];
     for(let shabad of this.shabads_obj){
@@ -96,6 +100,8 @@ export class UploadShabadsComponent implements OnInit {
     this.selected_shabad_url = this.selected_shabad_url.replace(/ /g, "+");
     this.selected_shabad_starting_id = this.selected_shabad_obj['starting_id'];
     this.selected_shabad_ending_id = this.selected_shabad_obj['ending_id'];
+    this.selected_shabad_starting_time = this.selected_shabad_obj['shabad_starting_time'].replace(':', '');
+    this.selected_shabad_ending_time = this.selected_shabad_obj['shabad_ending_time'].replace(':', '');
 
     this.more_lines_starting_id = this.selected_shabad_obj['starting_id'];
     this.more_lines_ending_id = this.selected_shabad_obj['ending_id'];
@@ -103,7 +109,8 @@ export class UploadShabadsComponent implements OnInit {
     this.restService.getRangeLines(this.more_lines_starting_id, this.more_lines_ending_id)
       .then(data => {
         for(let panktiObj of data){
-          this.shabad_panktis.push(panktiObj['Gurmukhi'])
+          this.shabad_panktis.push(panktiObj['Gurmukhi']);
+          this.shabad_pankti_ids.push(panktiObj['ID']);
         }
       })
       .catch(error => console.log(error));
@@ -111,12 +118,14 @@ export class UploadShabadsComponent implements OnInit {
 
   showMoreLines(){
     this.shabad_panktis = [];
+    this.shabad_pankti_ids = [];
     this.more_lines_starting_id -= 2;
     this.more_lines_ending_id += 2;
     this.restService.getRangeLines(this.more_lines_starting_id, this.more_lines_ending_id)
       .then(data => {
         for(let panktiObj of data){
-          this.shabad_panktis.push(panktiObj['Gurmukhi'])
+          this.shabad_panktis.push(panktiObj['Gurmukhi']);
+          this.shabad_pankti_ids.push(panktiObj['ID']);
         }
       })
       .catch(error => console.log(error));
@@ -124,12 +133,14 @@ export class UploadShabadsComponent implements OnInit {
 
   removeExtraLines(){
     this.shabad_panktis = [];
+    this.shabad_pankti_ids = [];
     this.more_lines_starting_id = this.selected_shabad_obj['starting_id'];
     this.more_lines_ending_id = this.selected_shabad_obj['ending_id'];
     this.restService.getRangeLines(this.more_lines_starting_id, this.more_lines_ending_id)
       .then(data => {
         for(let panktiObj of data){
-          this.shabad_panktis.push(panktiObj['Gurmukhi'])
+          this.shabad_panktis.push(panktiObj['Gurmukhi']);
+          this.shabad_pankti_ids.push(panktiObj['ID']);
         }
       })
       .catch(error => console.log(error));
@@ -154,13 +165,30 @@ export class UploadShabadsComponent implements OnInit {
       .catch(error => console.log(error));
   }
 
-  uploadShabadToAWS(){
+  changeStartingTime(){
+    this.restService.changeStartingTime(this.selected_shabad_obj['id'], this.selected_shabad_obj['shabad_starting_time'],
+      this.selected_shabad_starting_time.slice(0,2) + ":" + this.selected_shabad_starting_time.slice(2))
+      .then(data => this.toastrService.success('', data['Result'].toString(), this.config))
+      .catch(error => console.log(error));
+  }
 
+  changeEndingTime(){
+    this.restService.changeEndingTime(this.selected_shabad_obj['id'], this.selected_shabad_obj['shabad_ending_time'],
+      this.selected_shabad_ending_time.slice(0,2) + ":" + this.selected_shabad_ending_time.slice(2))
+      .then(data => this.toastrService.success('', data['Result'].toString(), this.config))
+      .catch(error => console.log(error));
+  }
+
+  uploadShabadToAWS(){
     this.toastrService.warning('', "Please wait while shabad is being uploaded...", this.config);
     this.selected_shabad_obj['shabad_english_title'] = this.selected_shabad_english_title;
+    this.selected_shabad_obj['shabad_starting_time'] = this.selected_shabad_starting_time.slice(0,2) + ":" + this.selected_shabad_starting_time.slice(2);
+    this.selected_shabad_obj['shabad_ending_time'] = this.selected_shabad_ending_time.slice(0,2) + ":" + this.selected_shabad_ending_time.slice(2);
+
     this.restService.uploadShabad(this.selected_shabad_obj, this.selected_raagi, this.selected_recording_title)
       .then(data =>  this.toastrService.success('', data.toString(), this.config))
-      .catch(error =>  this.toastrService.error('', 'Shabad uploading failed!', this.config));
+      .catch(error =>  this.toastrService.error('',
+        this.selected_shabad_obj['shabad_english_title'] + ' shabad uploading failed!', this.config));
   }
 
   rewind(){
@@ -181,7 +209,6 @@ export class UploadShabadsComponent implements OnInit {
     this.recordings_obj = data;
     this.recording_titles = [];
     this.recordings_obj = this.recordings_obj.sort(this.compareByDate);
-    console.log(this.recordings_obj);
     for(let recordingObj of this.recordings_obj){
       this.recording_titles.push(recordingObj.recording_title);
     }
