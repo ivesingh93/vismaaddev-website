@@ -1,33 +1,3 @@
-
-COMMANDS:
----------
-
-1. Copy Files:
-
-cp -r assets /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
-cp -r config /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
-cp -r models /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
-cp -r node_modules /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
-cp -r routes /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
-cp -r public /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
-cp app.js /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
-cp package.json /Users/ivesingh/Desktop/Vismaad\ Heroku/vismaaddev/
-
-2. Mongo Export - To download data from vismaaddev:
-
-VISMAAD DEV:
-
-mongoexport -h ds211558.mlab.com:11558 -d vismaaddev -c raagis -u ivesingh -p 9april1993 -o files_backup/raagis.json
-mongoexport -h ds211558.mlab.com:11558 -d vismaaddev -c shabads -u ivesingh -p 9april1993 -o files_backup/shabads.json
-
-3. Mongo Import - To upload data to vismaadprod:
-
-VISMAAD PROD:
-
-mongoimport -h ds143132.mlab.com:43132 -d vismaadprod -c raagis -u ivesingh -p 9april1993 --file files_backup/raagis.json
-mongoimport -h ds143132.mlab.com:43132 -d vismaadprod -c shabads -u ivesingh -p 9april1993 --file files_backup/shabads.json
-
-
 DEPLOY NOTES:
 ------------
 
@@ -36,21 +6,19 @@ DEPLOY NOTES:
 2. Go back to the client folder
     --> Run "ng build". This will create public folder
 3. Open app.js file and comment out every line that refers to the public folder
-4. Make sure the port # in app.js file is 8080
-5. Copy all the files using the commands above
-6. Go to the vismaadprod directory and run the following commands:
-    --> git add .
-    --> git commit -m "<message>"
-    --> git push heroku master
+4. Make sure the port # in app.js file is 80
+5. COPY THE MODIFIED FILES TO THE SERVER
 
 CONNECT TO AWS:
 ---------------
 
 1. Go to /Users/ivesingh/Documents/WebStormProjects
 2. Run ssh -i sehaj-bani.pem ubuntu@ec2-34-235-190-145.compute-1.amazonaws.com
+3. Enter "sudo su"
 
 APP IN BACKGROUND:
 -----------------
 
 1. To run an app as a background service: "pm2 start app"
 2. To stop an app from a background service: "pm2 stop app"
+3. To restart an app from a background service: "pm2 restart app"
