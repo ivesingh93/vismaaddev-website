@@ -32,6 +32,7 @@ export class UploadShabadsComponent implements OnInit {
   more_lines_starting_id = 0;
   more_lines_ending_id = 0;
 
+  shabadsStatus = "";
   delete_recording = false;
 
   config: ToastConfig = {
@@ -219,6 +220,7 @@ export class UploadShabadsComponent implements OnInit {
     this.shabad_english_titles = [];
     for(let shabadObj of data){
       this.shabad_english_titles.push(shabadObj.shabad_english_title);
+      this.shabadsStatus = shabadObj['status'];
     }
   }
 
