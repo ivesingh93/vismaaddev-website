@@ -6,3 +6,4 @@ config/database.js
 notes.txt
 package-lock.json
 client/package-lock.json
+*.mp3
