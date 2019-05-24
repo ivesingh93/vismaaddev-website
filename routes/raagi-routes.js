@@ -15,6 +15,8 @@ const shuffle = require('shuffle-array');
 
 // *********************************************************************************************************************
 
+// Home Page API is called during the very first page after the sign in within the app.
+// As of 05/23/2019, it shows 5 popular shabads, 6 popular raagis, and 6 radio channels.
 router.get('/homePage', (req, res) => {
     (async () => {
         const client = await initialize_pool().connect();
@@ -25,10 +27,13 @@ router.get('/homePage', (req, res) => {
             //let recentlyAddedShabads = (await client.query(queries.RECENTLY_ADDED_SHABADS)).rows;
             let raagisInfo = shuffle.pick(processRaagiInfo( ((await client.query(queries.HOME_PAGE_RAAGI_INFO)).rows)), {picks: 6});
 
+            let radioChannels = (await client.query(queries.RADIO_CHANNELS)).rows;
+
             res.send({
                 popularShabads,
                 //recentlyAddedShabads,
-                raagisInfo
+                raagisInfo,
+                radioChannels
             });
             await client.query('COMMIT');
         }catch(e){
@@ -41,6 +46,18 @@ router.get('/homePage', (req, res) => {
 
 });
 
+// All Radio Stations will be shown when See All is clicked
+router.get('/radioChannels', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    const query = queries.RADIO_CHANNELS;
+    client.query(query, (err, sqlResponse) => {
+        res.send(sqlResponse.rows);
+        client.end();
+    });
+});
+
+// The top 50 popular shabads will be shown when clicked See All
 router.get('/popularShabads', (req, res) => {
     let client = initialize_client();
     client.connect();
@@ -50,6 +67,7 @@ router.get('/popularShabads', (req, res) => {
     });
 });
 
+// Recently Added shabads will be shown when See All is clicked
 router.get('/recentlyAddedShabads', (req, res) => {
     let client = initialize_client();
     client.connect();
@@ -59,6 +77,7 @@ router.get('/recentlyAddedShabads', (req, res) => {
     });
 });
 
+// All raagis will be shown when See All is clicked
 router.get('/raagi_info', (req, res) => {
     let client = initialize_client();
     client.connect();
@@ -79,6 +98,8 @@ router.get('/raagi_info', (req, res) => {
         client.end();
     });
 });
+
+// *********************************************************************************************************************
 
 // NOTE: If the length is greater than 59 minutes, then to_char() needs to have HH12:MI:SS
 router.get('/raagis/:raagi_name/shabads', (req, res) => {
