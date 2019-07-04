@@ -23,16 +23,17 @@ router.get('/homePage', (req, res) => {
         try{
             await client.query ('BEGIN');
 
-            let popularShabads = shuffle.pick((await client.query(queries.POPULAR_SHABADS, [25])).rows, {picks: 5});
-            //let recentlyAddedShabads = (await client.query(queries.RECENTLY_ADDED_SHABADS)).rows;
             let raagisInfo = shuffle.pick(processRaagiInfo( ((await client.query(queries.HOME_PAGE_RAAGI_INFO)).rows)), {picks: 6});
-
+            let popularShabads = shuffle.pick((await client.query(queries.POPULAR_SHABADS, [25])).rows, {picks: 5});
+            let kathavaachaksInfo = shuffle.pick(processKathavaachakInfo( ((await client.query(queries.HOME_PAGE_KATHAVAACHAKS_INFO)).rows)), {picks: 6});
+            //let recentlyAddedShabads = (await client.query(queries.RECENTLY_ADDED_SHABADS)).rows;
             let radioChannels = (await client.query(queries.RADIO_CHANNELS)).rows;
 
             res.send({
+                raagisInfo,
                 popularShabads,
                 //recentlyAddedShabads,
-                raagisInfo,
+                kathavaachaksInfo,
                 radioChannels
             });
             await client.query('COMMIT');
@@ -82,6 +83,28 @@ router.get('/raagi_info', (req, res) => {
     let client = initialize_client();
     client.connect();
     const query = queries.RAAGI_INFO;
+    client.query(query, (err, sqlResponse) => {
+        let raagis_info = [];
+        for(let raagi of sqlResponse.rows){
+            let hhmmss = raagi.total_length.split(':');
+            let minutes = (parseInt(hhmmss[0]*60)) + (parseInt(hhmmss[1]));
+
+            raagi.raagi_id = parseInt(raagi.raagi_id);
+            raagi.shabads_count = parseInt(raagi.shabads_count);
+            raagi.minutes_of_shabads = minutes;
+            delete raagi.total_length;
+            raagis_info.push(raagi);
+        }
+        res.send(raagis_info);
+        client.end();
+    });
+});
+
+// All kathavaachaks will be shown when See All is clicked
+router.get('/kathavaachak_info', (req, res) => {
+    let client = initialize_client();
+    client.connect();
+    const query = queries.KATHAVAACHAK_INFO;
     client.query(query, (err, sqlResponse) => {
         let raagis_info = [];
         for(let raagi of sqlResponse.rows){
@@ -654,6 +677,21 @@ function processRaagiInfo(rows){
         raagis_info.push(raagi);
     }
     return raagis_info
+}
+
+function processKathavaachakInfo(rows){
+    let kathavaachak_info = [];
+    for(let kathavaachak of rows){
+        let hhmmss = kathavaachak.total_length.split(':');
+        let minutes = (parseInt(hhmmss[0]*60)) + (parseInt(hhmmss[1]));
+
+        kathavaachak.raagi_id = parseInt(kathavaachak.raagi_id);
+        kathavaachak.shabads_count = parseInt(kathavaachak.shabads_count);
+        kathavaachak.minutes_of_shabads = minutes;
+        delete kathavaachak.total_length;
+        kathavaachak_info.push(kathavaachak);
+    }
+    return kathavaachak_info
 }
 
 function initialize_client(){
