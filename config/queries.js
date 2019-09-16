@@ -4,7 +4,7 @@ module.exports = {
 
 
 
-    RAAGI_NAMES: "select name from raagi where type = 'Raagi' order by name",
+    RAAGI_NAMES: "select name from raagi order by name",
     RECORDING_URLS: "select url from recording order by url",
     RECENT_RECORDINGS: "select title from recording order by date_added desc limit 20",
 
